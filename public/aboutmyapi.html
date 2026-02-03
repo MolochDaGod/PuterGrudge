@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudPilot AI Studio - API & Systems Documentation</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-code: #1a1a2e;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --primary: #3b82f6;
+      --secondary: #e94560;
+      --accent: #10b981;
+      --border: #2a2a3e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    header {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: linear-gradient(135deg, var(--bg-card), var(--bg));
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    h1 span { color: var(--primary); }
+    .subtitle { color: var(--text-muted); font-size: 1.2rem; }
+    nav {
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      z-index: 100;
+    }
+    nav ul { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; justify-content: center; }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    nav a:hover { background: var(--bg-code); }
+    section { margin: 3rem 0; }
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h3 { font-size: 1.3rem; margin: 1.5rem 0 1rem; color: var(--primary); }
+    h4 { font-size: 1.1rem; margin: 1rem 0 0.5rem; color: var(--accent); }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+    }
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: var(--bg-code);
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+    }
+    .method {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      min-width: 60px;
+      text-align: center;
+    }
+    .method.get { background: #10b981; color: #000; }
+    .method.post { background: #3b82f6; color: #fff; }
+    .method.patch { background: #f59e0b; color: #000; }
+    .method.delete { background: #ef4444; color: #fff; }
+    .path { color: var(--text); }
+    .desc { color: var(--text-muted); font-size: 0.9rem; margin-left: auto; }
+    code {
+      background: var(--bg-code);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+    }
+    pre {
+      background: var(--bg-code);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { background: var(--bg-code); color: var(--primary); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      margin: 0.25rem;
+    }
+    .badge-blue { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: var(--accent); }
+    .badge-red { background: rgba(233, 69, 96, 0.2); color: var(--secondary); }
+    .badge-yellow { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .flow-diagram {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: var(--bg-code);
+      border-radius: 8px;
+    }
+    .flow-box {
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .flow-arrow { color: var(--primary); font-size: 1.5rem; }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>CloudPilot</span> AI Studio</h1>
+    <p class="subtitle">Complete API & Systems Documentation for AI Agents and Developers</p>
+    <p style="margin-top: 1rem;">Version 2.0.0 | Last Updated: 2026</p>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#api-endpoints">API Endpoints</a></li>
+      <li><a href="#frontend">Frontend Systems</a></li>
+      <li><a href="#backend">Backend Services</a></li>
+      <li><a href="#puter">Puter Integration</a></li>
+      <li><a href="#extensions">Extensions</a></li>
+      <li><a href="#arena">Arena Games</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <section id="overview">
+      <h2>System Overview</h2>
+      <div class="card">
+        <p>CloudPilot AI Studio is an autonomous AI cloud management agent and development studio. It provides:</p>
+        <ul style="margin: 1rem 0; padding-left: 2rem;">
+          <li><strong>GrudgeOS</strong> - Screen-in-screen embedded development environment</li>
+          <li><strong>Monaco Editor</strong> - VSCode-like code editing with Puter filesystem</li>
+          <li><strong>AI Console</strong> - Access to 500+ AI models via Puter</li>
+          <li><strong>Operations Panel</strong> - Real-time task tracking and progress</li>
+          <li><strong>Arena Games</strong> - Multiplayer game hosting and development</li>
+          <li><strong>Agent System</strong> - Autonomous AI agents for task automation</li>
+        </ul>
+      </div>
+
+      <h3>Key Technologies</h3>
+      <div class="grid">
+        <div class="card">
+          <h4>Frontend</h4>
+          <span class="badge badge-blue">React</span>
+          <span class="badge badge-blue">TypeScript</span>
+          <span class="badge badge-blue">Tailwind CSS</span>
+          <span class="badge badge-blue">Zustand</span>
+          <span class="badge badge-blue">Monaco Editor</span>
+          <span class="badge badge-blue">Wouter</span>
+        </div>
+        <div class="card">
+          <h4>Backend</h4>
+          <span class="badge badge-green">Express.js</span>
+          <span class="badge badge-green">TypeScript</span>
+          <span class="badge badge-green">WebSocket</span>
+          <span class="badge badge-green">Sharp</span>
+          <span class="badge badge-green">GLTF-Transform</span>
+        </div>
+        <div class="card">
+          <h4>External Services</h4>
+          <span class="badge badge-yellow">Puter.js</span>
+          <span class="badge badge-yellow">OpenAI</span>
+          <span class="badge badge-yellow">CryptoPanic</span>
+          <span class="badge badge-yellow">Discord OAuth</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>System Architecture</h2>
+      
+      <h3>Frontend-Backend Data Flow</h3>
+      <div class="flow-diagram">
+        <div class="flow-box">
+          <strong>User</strong><br>
+          <small>Browser</small>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <strong>React Frontend</strong><br>
+          <small>GrudgeDock / Arena</small>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <strong>Puter.js SDK</strong><br>
+          <small>AI, FS, KV, Auth</small>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">
+          <strong>Express Backend</strong><br>
+          <small>API + WebSocket</small>
+        </div>
+      </div>
+
+      <h3>Application Shells</h3>
+      <table>
+        <tr><th>Shell</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td>GrudgeStudio</td><td><code>/</code> (default), <code>/grudge-studio</code></td><td>Main IDE workspace with editor, AI, terminal</td></tr>
+        <tr><td>CloudPilotShell</td><td><code>/cloudpilot</code>, <code>/home</code></td><td>Cloud management dashboard</td></tr>
+        <tr><td>ArenaShell</td><td>FlipFlip toggle button</td><td>Multiplayer game environment</td></tr>
+        <tr><td>TreatyPage</td><td><code>/treaty</code></td><td>Terms and agreements</td></tr>
+      </table>
+
+      <h3>FlipFlip Context Switching</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/flipflip/FlipFlipContext.tsx</code></p>
+        <p>Provides seamless transitions between CloudPilot Studio and Arena Games modes:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li><strong>FlipFlipProvider</strong> - React context wrapping entire app</li>
+          <li><strong>useFlipFlip()</strong> - Hook for accessing state and toggle function</li>
+          <li><strong>FlipButton</strong> - Fixed bottom-right button for mode switching</li>
+          <li><strong>WebGL Transition</strong> - Animated 3D card flip effect</li>
+        </ul>
+        <h4>State Interface</h4>
+        <pre>
+interface FlipFlipState {
+  activeSide: 'cloudpilot' | 'arena';
+  isTransitioning: boolean;
+  lastCloudPilotRoute: string;
+  lastArenaRoute: string;
+}
+
+// Usage:
+const { state, flipTo, toggle } = useFlipFlip();
+await flipTo('arena');
+await toggle(); // Switches to opposite mode</pre>
+      </div>
+
+      <h3>State Management</h3>
+      <div class="card">
+        <h4>OperationsBus (Zustand Store)</h4>
+        <p>Central state for tracking all operations with progress, logs, and status.</p>
+        <pre>
+// Store Location: client/src/stores/operationsBus.ts
+
+interface Operation {
+  id: string;
+  type: 'ai' | 'deploy' | 'file' | 'build' | 'system';
+  title: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  logs: string[];
+  startTime: Date;
+  endTime?: Date;
+}
+
+// Usage:
+const { addOperation, setProgress, completeOperation } = useOperationsBus();</pre>
+      </div>
+    </section>
+
+    <section id="api-endpoints">
+      <h2>API Endpoints</h2>
+
+      <h3>Core API (v1) - Preferred</h3>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/v1/info</span>
+        <span class="desc">Application info and version</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/v1/health</span>
+        <span class="desc">Health check with service status</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/v1/ai/chat</span>
+        <span class="desc">AI chat guidance (use Puter AI from frontend)</span>
+      </div>
+
+      <h3>Legacy API (Non-versioned) - Also Active</h3>
+      <div class="card" style="margin-bottom: 1rem;">
+        <p style="color: var(--text-muted); font-size: 0.9rem;">These legacy endpoints remain active for backwards compatibility. Prefer the v1 versioned API for new integrations.</p>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/info</span>
+        <span class="desc">Application info (legacy)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/health</span>
+        <span class="desc">Health check (legacy)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/ai/chat</span>
+        <span class="desc">AI chat guidance (legacy)</span>
+      </div>
+
+      <h3>AI Agent API</h3>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/agent/solve</span>
+        <span class="desc">Submit problem for AI agent processing</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/agent/solve/:id</span>
+        <span class="desc">Get job status and result</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/agent/jobs</span>
+        <span class="desc">List all agent jobs</span>
+      </div>
+
+      <h3>Extensions API</h3>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/extensions</span>
+        <span class="desc">List all registered extensions</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/extensions/:id</span>
+        <span class="desc">Get specific extension details</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/extensions</span>
+        <span class="desc">Register new extension</span>
+      </div>
+      <div class="endpoint">
+        <span class="method patch">PATCH</span>
+        <span class="path">/api/extensions/:id</span>
+        <span class="desc">Update extension (enable/disable)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method delete">DELETE</span>
+        <span class="path">/api/extensions/:id</span>
+        <span class="desc">Remove extension</span>
+      </div>
+
+      <h3>Image Conversion API</h3>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/image/convert</span>
+        <span class="desc">Convert images (webp, png, jpeg, avif)</span>
+      </div>
+      <div class="card">
+        <h4>Request (multipart/form-data)</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          <tr><td>image</td><td>File</td><td>Image file (max 50MB)</td></tr>
+          <tr><td>format</td><td>string</td><td>webp, png, jpeg, avif</td></tr>
+          <tr><td>width</td><td>number</td><td>Target width (optional)</td></tr>
+          <tr><td>height</td><td>number</td><td>Target height (optional)</td></tr>
+          <tr><td>quality</td><td>number</td><td>Quality 1-100 (default: 80)</td></tr>
+        </table>
+      </div>
+
+      <h3>3D Model Conversion API</h3>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/3d/convert</span>
+        <span class="desc">Convert 3D models (GLTF/GLB)</span>
+      </div>
+      <div class="card">
+        <h4>Request (multipart/form-data)</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          <tr><td>model</td><td>File</td><td>GLTF or GLB file</td></tr>
+          <tr><td>format</td><td>string</td><td>gltf or glb</td></tr>
+          <tr><td>optimize</td><td>string</td><td>none or optimize</td></tr>
+        </table>
+      </div>
+
+      <h3>Deployment API</h3>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/deploy/templates</span>
+        <span class="desc">List deployment templates</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/deploy/templates/:id</span>
+        <span class="desc">Get template with files</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/deploy/site</span>
+        <span class="desc">Deploy static website</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/deploy/game</span>
+        <span class="desc">Deploy game from template</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/deploy/list</span>
+        <span class="desc">List all deployments</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/deploy/:id</span>
+        <span class="desc">Get deployment status</span>
+      </div>
+      <div class="endpoint">
+        <span class="method patch">PATCH</span>
+        <span class="path">/api/deploy/:id</span>
+        <span class="desc">Update deployment (stop/restart)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method delete">DELETE</span>
+        <span class="path">/api/deploy/:id</span>
+        <span class="desc">Delete deployment</span>
+      </div>
+
+      <h3>GRUDACHAIN Accounts API</h3>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/accounts/gruda</span>
+        <span class="desc">Link GRUDACHAIN account</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/accounts/gruda/:username</span>
+        <span class="desc">Get account info</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/accounts/gruda/:username/sync</span>
+        <span class="desc">Sync capabilities</span>
+      </div>
+
+      <h3>GrudgeOS Assets API (v1)</h3>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/v1/grudgeos/assets</span>
+        <span class="desc">Get asset catalog (maps, models, textures, sounds)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/v1/grudgeos/ai</span>
+        <span class="desc">Get AI system prompts for game dev tasks</span>
+      </div>
+
+      <h3>External Service APIs</h3>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/crypto/news</span>
+        <span class="desc">CryptoPanic news feed</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/art/generate</span>
+        <span class="desc">AI art generation (DALL-E 3)</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/gbux/balance</span>
+        <span class="desc">GBUX token status</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/discord/auth-url</span>
+        <span class="desc">Discord OAuth configuration</span>
+      </div>
+
+      <h3>Terminal API</h3>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/terminal/exec</span>
+        <span class="desc">Execute sandboxed terminal command</span>
+      </div>
+    </section>
+
+    <section id="frontend">
+      <h2>Frontend Systems</h2>
+
+      <h3>GrudgeDock Workspace</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/grudgeos/GrudgeDock.tsx</code></p>
+        <p>Screen-in-screen IDE with resizable panels:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li><strong>Sidebar</strong> - File explorer showing GRUDACHAIN folders</li>
+          <li><strong>Tab System</strong> - Multiple file/AI/terminal tabs</li>
+          <li><strong>Operations Panel</strong> - Right-side collapsible progress tracker</li>
+        </ul>
+      </div>
+
+      <h3>VSCodeShell (Monaco Editor)</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/grudgeos/VSCodeShell.tsx</code></p>
+        <p>Features:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li>Dynamic Monaco loading from CDN</li>
+          <li>Puter filesystem read/write integration</li>
+          <li>Language detection by file extension</li>
+          <li>Ctrl+S save with operations tracking</li>
+          <li>Dark theme matching system design</li>
+        </ul>
+      </div>
+
+      <h3>AIConsole</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/grudgeos/AIConsole.tsx</code></p>
+        <p>Multi-model AI chat interface:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li>500+ models via Puter AI</li>
+          <li>Model selector (GPT-4o, Claude, Gemini, DeepSeek)</li>
+          <li>Conversation history</li>
+          <li>Operations tracking integration</li>
+        </ul>
+      </div>
+
+      <h3>OperationsPanel</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/grudgeos/OperationsPanel.tsx</code></p>
+        <p>Real-time operations tracker:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li>Overall progress calculation</li>
+          <li>Per-operation progress bars</li>
+          <li>Expandable log entries</li>
+          <li>Filter by status (active, completed, failed)</li>
+        </ul>
+      </div>
+
+      <h3>UserOnboarding</h3>
+      <div class="card">
+        <p><strong>Location:</strong> <code>client/src/components/grudgeos/UserOnboarding.tsx</code></p>
+        <p>New user flow automation:</p>
+        <ul style="padding-left: 2rem; margin-top: 0.5rem;">
+          <li>Creates GRUDACHAIN folder structure</li>
+          <li>Spawns first AI agent</li>
+          <li>Deploys HelloWorld to puter.site</li>
+          <li>Uses Puter KV flag to skip repeat onboarding</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="backend">
+      <h2>Backend Services</h2>
+
+      <h3>Server Configuration</h3>
+      <div class="card">
+        <p><strong>Entry:</strong> <code>server/routes.ts</code></p>
+        <p><strong>Port:</strong> 5000 (frontend bound)</p>
+        <p><strong>Architecture:</strong> Express + WebSocket (Arena)</p>
+      </div>
+
+      <h3>Static Routes</h3>
+      <table>
+        <tr><th>Path</th><th>Serves</th></tr>
+        <tr><td>/</td><td>public/index.html (CloudPilot)</td></tr>
+        <tr><td>/grudgeos</td><td>public/grudgeos/index.html</td></tr>
+        <tr><td>/grudgeos/ai</td><td>AI Studio interface</td></tr>
+        <tr><td>/grudgeos/desktop</td><td>Desktop environment</td></tr>
+        <tr><td>/grudgeos/games</td><td>Games launcher</td></tr>
+        <tr><td>/grudgeos/agents</td><td>Agent swarm manager</td></tr>
+        <tr><td>/grudgeos/compute</td><td>Compute pods interface</td></tr>
+      </table>
+
+      <h3>GrudgeOS Libraries</h3>
+      <div class="grid">
+        <div class="card">
+          <h4>Core Libraries</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li>agent-registry.js</li>
+            <li>build-manager.js</li>
+            <li>file-workspace.js</li>
+            <li>puter-bootstrap.js</li>
+            <li>system-monitor.js</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Agent Libraries</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li>agent-runtime.js</li>
+            <li>agent-constitution.js</li>
+            <li>agent-learning.js</li>
+            <li>agent-sync.js</li>
+            <li>agent-squad.js</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Runtime Libraries</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li>wasm-runtime.js</li>
+            <li>webgl-visualizer.js</li>
+            <li>pod-manager.js</li>
+            <li>snapshot-manager.js</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Environment Variables</h3>
+      <table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td>ALE_AI</td><td>OpenAI API key for agent solve</td></tr>
+        <tr><td>CRYPTOPANIC_API</td><td>CryptoPanic news API key</td></tr>
+        <tr><td>GENERATIVE_ART_API</td><td>DALL-E / art generation API</td></tr>
+        <tr><td>GBUX_TOKEN</td><td>GBUX token integration</td></tr>
+        <tr><td>DISCORD_CLIENT_SECRET</td><td>Discord OAuth secret</td></tr>
+        <tr><td>SESSION_SECRET</td><td>Session encryption key</td></tr>
+      </table>
+    </section>
+
+    <section id="puter">
+      <h2>Puter.js Integration</h2>
+      
+      <div class="card">
+        <p>Puter provides free cloud services including AI, filesystem, key-value storage, hosting, and authentication.</p>
+        <pre>
+// Initialize Puter (auto-loads from puter.site)
+await puter.init();
+
+// AI Chat (free models: GPT-4o, Claude, Gemini, DeepSeek)
+const response = await puter.ai.chat('Hello, AI!');
+const response = await puter.ai.chat('Hello!', { model: 'claude-3-5-sonnet' });
+
+// Filesystem
+await puter.fs.write('/GRUDACHAIN/config.json', JSON.stringify(data));
+const content = await puter.fs.read('/GRUDACHAIN/config.json');
+await puter.fs.mkdir('/GRUDACHAIN/grudge-core');
+const files = await puter.fs.readdir('/GRUDACHAIN');
+
+// Key-Value Storage (persistent)
+await puter.kv.set('user:preferences', JSON.stringify(prefs));
+const prefs = await puter.kv.get('user:preferences');
+
+// Hosting (deploy to *.puter.site)
+await puter.hosting.create('myapp', htmlContent);
+
+// Authentication
+const user = await puter.auth.getUser();
+const isLoggedIn = await puter.auth.isSignedIn();</pre>
+      </div>
+
+      <h3>GRUDACHAIN Folder Structure</h3>
+      <pre>
+/GRUDACHAIN/
+├── grudge-core/       # Core system files
+│   ├── config/        # System configuration
+│   ├── state/         # Runtime state
+│   └── active/        # Active processes
+├── grudge-workers/    # Background workers
+│   ├── config/
+│   ├── state/
+│   └── active/
+├── grudge-ai/         # AI models and memory
+│   ├── models/        # Model configurations
+│   ├── memory/        # Learned preferences
+│   └── active/
+└── grudge-users/      # User data
+    ├── profiles/      # User profiles
+    └── state/         # User state</pre>
+    </section>
+
+    <section id="extensions">
+      <h2>Default Extensions</h2>
+      
+      <div class="grid">
+        <div class="card">
+          <h4>AI Extensions</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li><strong>AI Chat</strong> - Multi-model conversation</li>
+            <li><strong>Code Generator</strong> - AI code generation</li>
+            <li><strong>Memory Manager</strong> - AI learning preferences</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Deployment Extensions</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li><strong>Site Deployer</strong> - Static website hosting</li>
+            <li><strong>Game Deployer</strong> - Game server hosting</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Storage Extensions</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li><strong>File Manager</strong> - Cloud file operations</li>
+            <li><strong>KV Store</strong> - Key-value persistence</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Tool Extensions</h4>
+          <ul style="padding-left: 1.5rem;">
+            <li><strong>Image Processor</strong> - Image conversion</li>
+            <li><strong>3D Optimizer</strong> - GLTF/GLB optimization</li>
+            <li><strong>Workflow Runner</strong> - Automation sequences</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="arena">
+      <h2>Arena Games System</h2>
+      
+      <div class="card">
+        <p><strong>WebSocket Endpoint:</strong> <code>ws://host:5000/arena</code></p>
+        <p>Multiplayer game environment with real-time state synchronization.</p>
+        <h4>Features</h4>
+        <ul style="padding-left: 1.5rem; margin-top: 0.5rem;">
+          <li>Room-based multiplayer</li>
+          <li>Player state synchronization</li>
+          <li>AI agent companions</li>
+          <li>Chat integration</li>
+          <li>Game templates (3D, 2D, RPG)</li>
+        </ul>
+      </div>
+
+      <h3>WebSocket Message Contracts</h3>
+      <div class="card">
+        <h4>Client to Server Messages</h4>
+        <pre>
+// Join room
+{ type: 'join', payload: { roomId: string, playerName: string } }
+
+// Player movement
+{ type: 'move', payload: { x: number, y: number, z?: number } }
+
+// Chat message
+{ type: 'chat', payload: { message: string } }
+
+// Game action
+{ type: 'action', payload: { actionType: string, data: any } }</pre>
+
+        <h4>Server to Client Messages</h4>
+        <pre>
+// State sync (full room state)
+{ type: 'state_sync', payload: { players: Player[], gameState: any } }
+
+// Player joined
+{ type: 'player_joined', payload: { playerId: string, name: string } }
+
+// Player left
+{ type: 'player_left', payload: { playerId: string } }
+
+// Player moved
+{ type: 'player_moved', payload: { playerId: string, position: Position } }
+
+// Chat broadcast
+{ type: 'chat_broadcast', payload: { from: string, message: string, timestamp: number } }
+
+// AI response
+{ type: 'ai_response', payload: { agentId: string, message: string } }</pre>
+      </div>
+
+      <h3>Game Templates</h3>
+      <div class="card">
+        <p>Available via <code>GET /api/deploy/templates</code>:</p>
+        <ul style="padding-left: 1.5rem;">
+          <li><strong>basic_canvas</strong> - HTML5 Canvas game starter</li>
+          <li><strong>threejs_scene</strong> - Three.js 3D scene template</li>
+          <li><strong>multiplayer_chat</strong> - Real-time chat application</li>
+          <li><strong>leaderboard</strong> - Gaming leaderboard with Puter KV</li>
+        </ul>
+      </div>
+
+      <h3>Game Assets</h3>
+      <div class="card">
+        <p>Located in <code>public/grudgeos/</code>:</p>
+        <ul style="padding-left: 1.5rem;">
+          <li><strong>models/</strong> - 3D GLTF/GLB models (RPG, vehicles, terrain)</li>
+          <li><strong>textures/</strong> - Environment textures (grass, sky, wood)</li>
+          <li><strong>sounds/</strong> - Audio files (background, effects)</li>
+          <li><strong>maps/</strong> - Level data (highway, crime_city, la_gang)</li>
+          <li><strong>icons/</strong> - Agent and UI icons (neon style)</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>CloudPilot AI Studio - Built with Puter.js</p>
+    <p style="margin-top: 0.5rem;">For AI agents: Parse this document for system understanding. Key sections: #api-endpoints, #puter, #architecture</p>
+  </footer>
+</body>
+</html>

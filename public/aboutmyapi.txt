@@ -1,0 +1,574 @@
+================================================================================
+CLOUDPILOT AI STUDIO - API & SYSTEMS DOCUMENTATION
+================================================================================
+Version: 2.0.0
+Type: Autonomous AI Cloud Management Agent & Development Environment
+Last Updated: 2026
+
+================================================================================
+SECTION: OVERVIEW
+================================================================================
+
+CloudPilot AI Studio provides:
+- GrudgeOS: Screen-in-screen embedded development environment
+- Monaco Editor: VSCode-like code editing with Puter filesystem integration
+- AI Console: Access to 500+ AI models via Puter.js
+- Operations Panel: Real-time task tracking and progress monitoring
+- Arena Games: Multiplayer game hosting and development
+- Agent System: Autonomous AI agents for task automation
+
+KEY_TECHNOLOGIES:
+- Frontend: React, TypeScript, Tailwind CSS, Zustand, Monaco Editor, Wouter
+- Backend: Express.js, TypeScript, WebSocket, Sharp, GLTF-Transform
+- External: Puter.js, OpenAI, CryptoPanic, Discord OAuth
+
+================================================================================
+SECTION: ARCHITECTURE
+================================================================================
+
+FRONTEND_BACKEND_FLOW:
+User Browser -> React Frontend (GrudgeDock/Arena) -> Puter.js SDK -> Express Backend
+
+APPLICATION_SHELLS:
+| Shell          | Path                        | Purpose                              |
+|----------------|----------------------------|--------------------------------------|
+| GrudgeStudio   | / (default), /grudge-studio| Main IDE with editor, AI, terminal   |
+| CloudPilotShell| /cloudpilot, /home         | Cloud management dashboard           |
+| ArenaShell     | FlipFlip toggle button     | Multiplayer game environment         |
+| TreatyPage     | /treaty                    | Terms and agreements                 |
+
+FLIPFLIP_CONTEXT_SWITCHING:
+Location: client/src/components/flipflip/FlipFlipContext.tsx
+Purpose: Seamless transitions between CloudPilot Studio and Arena Games
+
+Components:
+- FlipFlipProvider: React context wrapping entire app
+- useFlipFlip(): Hook for accessing state and toggle function
+- FlipButton: Fixed bottom-right button for mode switching
+- FlipFlipTransition: WebGL-powered 3D card flip animation
+
+State Interface:
+  interface FlipFlipState {
+    activeSide: 'cloudpilot' | 'arena';
+    isTransitioning: boolean;
+    lastCloudPilotRoute: string;
+    lastArenaRoute: string;
+  }
+
+Usage:
+  const { state, flipTo, toggle } = useFlipFlip();
+  await flipTo('arena');
+  await toggle(); // Switches to opposite mode
+
+STATE_MANAGEMENT:
+Store: OperationsBus (Zustand)
+Location: client/src/stores/operationsBus.ts
+Interface:
+  - addOperation(operation: Operation): string
+  - setProgress(id: string, progress: number): void
+  - appendLog(id: string, log: string): void
+  - completeOperation(id: string): void
+  - failOperation(id: string, error: string): void
+
+================================================================================
+SECTION: API_ENDPOINTS
+================================================================================
+
+--- CORE API (v1) - PREFERRED ---
+
+GET /api/v1/info
+  Description: Application info and version
+  Response: { name, version, description, environment }
+
+GET /api/v1/health
+  Description: Health check with service status
+  Response: { status, services: { puterAI, cryptopanic, generativeArt, gbux, discord }, version }
+
+POST /api/v1/ai/chat
+  Description: AI chat guidance (use Puter AI from frontend)
+  Response: { message, info }
+
+--- LEGACY API (NON-VERSIONED) - ALSO ACTIVE ---
+Note: These endpoints remain active for backwards compatibility. Prefer v1 API for new integrations.
+
+GET /api/info
+  Description: Application info (legacy)
+  Response: { name, version, description }
+
+GET /api/health
+  Description: Health check (legacy)
+  Response: { status, services, timestamp }
+
+POST /api/ai/chat
+  Description: AI chat guidance (legacy)
+  Response: { message, info }
+
+--- AI AGENT API ---
+
+POST /api/agent/solve
+  Description: Submit problem for AI agent processing
+  Body: { prompt: string, context?: string, model?: string, tools?: string[] }
+  Response: { jobId, status: 'pending', message }
+
+GET /api/agent/solve/:id
+  Description: Get job status and result
+  Response: { id, status, prompt, result, toolsUsed, createdAt, completedAt }
+
+GET /api/agent/jobs
+  Description: List all agent jobs (max 50)
+  Response: Array<AgentJob>
+
+--- EXTENSIONS API ---
+
+GET /api/extensions
+  Description: List all registered extensions
+  Response: Array<Extension>
+
+GET /api/extensions/:id
+  Description: Get specific extension details
+  Response: Extension
+
+POST /api/extensions
+  Description: Register new extension
+  Body: { id, name, description, version?, category?, config?, execute? }
+  Response: { success, extension }
+
+PATCH /api/extensions/:id
+  Description: Update extension (enable/disable, config)
+  Body: { enabled?: boolean, config?: object }
+  Response: { success, extension }
+
+DELETE /api/extensions/:id
+  Description: Remove extension
+  Response: { success }
+
+--- IMAGE CONVERSION API ---
+
+POST /api/image/convert
+  Description: Convert images to different formats
+  Content-Type: multipart/form-data
+  Fields:
+    - image: File (required, max 50MB)
+    - format: string (webp, png, jpeg, jpg, avif)
+    - width: number (optional)
+    - height: number (optional)
+    - quality: number (1-100, default 80)
+  Response: Binary image data
+
+--- 3D MODEL CONVERSION API ---
+
+POST /api/3d/convert
+  Description: Convert 3D models (GLTF/GLB only)
+  Content-Type: multipart/form-data
+  Fields:
+    - model: File (required, GLTF or GLB)
+    - format: string (gltf, glb)
+    - optimize: string (none, optimize)
+  Response: Binary model data
+
+--- DEPLOYMENT API ---
+
+GET /api/deploy/templates
+  Description: List deployment templates
+  Response: Array<Template>
+
+GET /api/deploy/templates/:id
+  Description: Get specific template
+  Response: Template
+
+POST /api/deploy/site
+  Description: Deploy static website
+  Body: { name, content, template? }
+  Response: { success, url, deploymentId }
+
+POST /api/deploy/game
+  Description: Deploy game server
+  Body: { name, template, config }
+  Response: { success, url, deploymentId }
+
+GET /api/deploy/list
+  Description: List all deployments
+  Response: Array<Deployment>
+
+GET /api/deploy/:id
+  Description: Get deployment status
+  Response: Deployment
+
+PATCH /api/deploy/:id
+  Description: Update deployment (stop/restart)
+  Body: { action: 'stop' | 'restart' }
+  Response: Deployment
+
+DELETE /api/deploy/:id
+  Description: Delete deployment
+  Response: { success }
+
+--- EXTERNAL SERVICE APIs ---
+
+GET /api/crypto/news
+  Description: CryptoPanic news feed
+  Query: { filter?: 'hot', currencies?: string }
+  Response: CryptoPanic API response
+
+POST /api/art/generate
+  Description: AI art generation (DALL-E 3)
+  Body: { prompt: string, style?: string, width?: number, height?: number }
+  Response: OpenAI images response
+
+GET /api/gbux/balance
+  Description: GBUX token status
+  Response: { configured, message }
+
+GET /api/discord/auth-url
+  Description: Discord OAuth configuration status
+  Response: { configured, message }
+
+--- TERMINAL API ---
+
+POST /api/terminal/exec
+  Description: Execute sandboxed terminal command
+  Body: { command: string, cwd?: string }
+  Response: { stdout, stderr, exitCode }
+
+--- GRUDACHAIN ACCOUNTS API ---
+
+POST /api/accounts/gruda
+  Description: Link GRUDACHAIN account
+  Body: { puterUsername: string, chainId: string, walletAddress?: string, capabilities?: string[] }
+  Response: { success, account }
+
+GET /api/accounts/gruda/:username
+  Description: Get account info
+  Response: { id, puterUsername, chainId, walletAddress, capabilities, linkedAt, lastSync }
+
+POST /api/accounts/gruda/:username/sync
+  Description: Sync capabilities
+  Body: { capabilities?: string[] }
+  Response: { success, account }
+
+--- GRUDGEOS ASSETS API (v1) ---
+
+GET /api/v1/grudgeos/assets
+  Description: Get full asset catalog
+  Response: { assets: Array<{ id, name, path, type, category, tags }>, count }
+  Asset Types: map, model, texture, sound
+
+POST /api/v1/grudgeos/ai
+  Description: Get AI system prompts for game dev tasks
+  Body: { task: string, prompt: string, context?: object }
+  Tasks: generate_game, generate_scene, generate_code, fix_code, add_feature, 
+         explain_code, suggest_assets, optimize_code, generate_npc, generate_quest
+  Response: { systemPrompt: string }
+
+================================================================================
+SECTION: FRONTEND_COMPONENTS
+================================================================================
+
+GRUDGEDOCK:
+  Location: client/src/components/grudgeos/GrudgeDock.tsx
+  Purpose: Screen-in-screen IDE workspace
+  Features:
+    - Resizable sidebar with file explorer
+    - Tab system for files, AI, terminal
+    - GRUDACHAIN folder navigation
+    - Operations panel toggle
+  Data-testids:
+    - grudge-dock (container)
+    - button-toggle-sidebar
+    - button-toggle-ops
+    - tab-trigger-{id}
+    - folder-grudge-core
+    - folder-grudge-workers
+    - folder-grudge-ai
+    - folder-grudge-users
+
+VSCODESHELL:
+  Location: client/src/components/grudgeos/VSCodeShell.tsx
+  Purpose: Monaco code editor with Puter integration
+  Features:
+    - Dynamic Monaco loading from CDN
+    - Puter filesystem read/write
+    - Language detection by extension
+    - Ctrl+S save with operations tracking
+  Data-testids:
+    - vscode-shell (container)
+    - button-save-file
+    - text-filename
+
+AICONSOLE:
+  Location: client/src/components/grudgeos/AIConsole.tsx
+  Purpose: Multi-model AI chat interface
+  Features:
+    - 500+ models via Puter AI
+    - Model selector dropdown
+    - Conversation history
+    - Operations tracking
+  Data-testids:
+    - ai-console (container)
+    - trigger-select-model
+    - option-model-{id}
+    - button-send-message
+    - button-clear-chat
+    - message-{id}
+
+OPERATIONSPANEL:
+  Location: client/src/components/grudgeos/OperationsPanel.tsx
+  Purpose: Real-time operations tracker
+  Features:
+    - Overall progress calculation
+    - Per-operation progress bars
+    - Expandable log entries
+    - Status filtering
+  Data-testids:
+    - operations-panel (container)
+    - progress-overall
+    - text-overall-progress
+    - operation-card-{id}
+    - button-expand-{id}
+    - text-total-ops
+
+USERONBOARDING:
+  Location: client/src/components/grudgeos/UserOnboarding.tsx
+  Purpose: New user automation flow
+  Features:
+    - Creates GRUDACHAIN folder structure
+    - Spawns first AI agent
+    - Deploys HelloWorld to puter.site
+    - Uses Puter KV flag (grudge:user:onboarded)
+  Data-testids:
+    - user-onboarding (container)
+
+================================================================================
+SECTION: PUTER_INTEGRATION
+================================================================================
+
+PUTER_AI:
+  // Free models: GPT-4o, Claude, Gemini, DeepSeek
+  const response = await puter.ai.chat('prompt');
+  const response = await puter.ai.chat('prompt', { model: 'claude-3-5-sonnet' });
+
+PUTER_FILESYSTEM:
+  await puter.fs.write(path, content);
+  const content = await puter.fs.read(path);
+  await puter.fs.mkdir(path);
+  const files = await puter.fs.readdir(path);
+  await puter.fs.delete(path);
+  const exists = await puter.fs.exists(path);
+
+PUTER_KV:
+  await puter.kv.set(key, value);
+  const value = await puter.kv.get(key);
+  await puter.kv.del(key);
+  const keys = await puter.kv.list();
+
+PUTER_HOSTING:
+  await puter.hosting.create(subdomain, htmlContent);
+  // Deploys to subdomain.puter.site
+
+PUTER_AUTH:
+  const user = await puter.auth.getUser();
+  const isLoggedIn = await puter.auth.isSignedIn();
+
+================================================================================
+SECTION: GRUDACHAIN_STRUCTURE
+================================================================================
+
+/GRUDACHAIN/
+├── grudge-core/
+│   ├── config/        # System configuration
+│   ├── state/         # Runtime state
+│   └── active/        # Active processes
+├── grudge-workers/
+│   ├── config/
+│   ├── state/
+│   └── active/
+├── grudge-ai/
+│   ├── models/        # Model configurations
+│   ├── memory/        # Learned preferences
+│   └── active/
+└── grudge-users/
+    ├── profiles/      # User profiles
+    └── state/         # User state
+
+================================================================================
+SECTION: DEFAULT_EXTENSIONS
+================================================================================
+
+EXTENSION: deploy_site
+  Name: Site Deployer
+  Category: deployment
+  Execute: puter.hosting.create
+
+EXTENSION: ai_chat
+  Name: AI Chat
+  Category: ai
+  Execute: puter.ai.chat
+
+EXTENSION: file_manager
+  Name: File Manager
+  Category: storage
+  Execute: puter.fs
+
+EXTENSION: kv_store
+  Name: KV Database
+  Category: storage
+  Execute: puter.kv
+
+EXTENSION: code_generator
+  Name: Code Generator
+  Category: ai
+  Execute: ai_code_gen
+
+EXTENSION: game_deployer
+  Name: Game Deployer
+  Category: deployment
+  Execute: deploy_game_server
+
+EXTENSION: workflow_runner
+  Name: Workflow Runner
+  Category: automation
+  Execute: run_workflow
+
+EXTENSION: image_processor
+  Name: Image Processor
+  Category: tools
+  Execute: process_image
+
+EXTENSION: model_optimizer
+  Name: 3D Optimizer
+  Category: tools
+  Execute: optimize_3d
+
+EXTENSION: memory_manager
+  Name: Memory Manager
+  Category: ai
+  Execute: manage_memory
+
+================================================================================
+SECTION: ENVIRONMENT_VARIABLES
+================================================================================
+
+ALE_AI: OpenAI API key for agent solve functionality
+CRYPTOPANIC_API: CryptoPanic news API key
+GENERATIVE_ART_API: DALL-E / art generation API key
+GBUX_TOKEN: GBUX token integration key
+DISCORD_CLIENT_SECRET: Discord OAuth client secret
+SESSION_SECRET: Session encryption key
+
+================================================================================
+SECTION: GRUDGEOS_LIBRARIES
+================================================================================
+
+CORE_LIBRARIES (public/grudgeos/lib/):
+- agent-registry.js: Agent registration and discovery
+- build-manager.js: Build process management
+- file-workspace.js: File workspace utilities
+- puter-bootstrap.js: Puter initialization
+- system-monitor.js: System health monitoring
+- connection-auditor.js: Connection auditing
+- production-audit.js: Production readiness checks
+
+AGENT_LIBRARIES:
+- agent-runtime.js: Agent execution runtime
+- agent-constitution.js: Agent behavioral rules
+- agent-learning.js: AI learning and adaptation
+- agent-sync.js: Multi-agent synchronization
+- agent-squad.js: Agent team coordination
+- agent-knowledge-base.js: Shared knowledge store
+
+RUNTIME_LIBRARIES:
+- wasm-runtime.js: WebAssembly execution
+- webgl-visualizer.js: 3D visualization
+- pods/pod-manager.js: Compute pod management
+- pods/snapshot-manager.js: State snapshots
+
+STUDIO_LIBRARIES:
+- studio/canvas-engine.js: Visual canvas system
+- studio/ai-journal.js: AI activity logging
+- studio/workflow-templates.js: Workflow definitions
+
+GAME_LIBRARIES:
+- game/input-manager.js: Input handling
+- game/character-controller.js: Character movement
+- game/third-person-camera.js: Camera system
+- arena/arena-client.js: Multiplayer client
+
+================================================================================
+SECTION: ARENA_WEBSOCKET
+================================================================================
+
+ENDPOINT: ws://host:5000/arena
+
+CLIENT_TO_SERVER_MESSAGES:
+
+JOIN_ROOM:
+  { type: 'join', payload: { roomId: string, playerName: string } }
+
+PLAYER_MOVE:
+  { type: 'move', payload: { x: number, y: number, z?: number } }
+
+CHAT_MESSAGE:
+  { type: 'chat', payload: { message: string } }
+
+GAME_ACTION:
+  { type: 'action', payload: { actionType: string, data: any } }
+
+SERVER_TO_CLIENT_MESSAGES:
+
+STATE_SYNC:
+  { type: 'state_sync', payload: { players: Player[], gameState: any } }
+
+PLAYER_JOINED:
+  { type: 'player_joined', payload: { playerId: string, name: string } }
+
+PLAYER_LEFT:
+  { type: 'player_left', payload: { playerId: string } }
+
+PLAYER_MOVED:
+  { type: 'player_moved', payload: { playerId: string, position: { x, y, z } } }
+
+CHAT_BROADCAST:
+  { type: 'chat_broadcast', payload: { from: string, message: string, timestamp: number } }
+
+AI_RESPONSE:
+  { type: 'ai_response', payload: { agentId: string, message: string } }
+
+GAME_TEMPLATES:
+- basic_canvas: HTML5 Canvas game starter
+- threejs_scene: Three.js 3D scene template
+- multiplayer_chat: Real-time chat application
+- leaderboard: Gaming leaderboard with Puter KV
+
+================================================================================
+SECTION: FILE_LOCATIONS
+================================================================================
+
+SERVER:
+- server/routes.ts: All API endpoints
+- server/storage.ts: Storage interface
+- server/arena/: Arena game server
+
+CLIENT:
+- client/src/App.tsx: Application entry
+- client/src/stores/: Zustand stores
+- client/src/components/grudgeos/: GrudgeOS components
+- client/src/components/shells/: Application shells
+- client/src/pages/: Page components
+
+PUBLIC:
+- public/index.html: CloudPilot entry
+- public/grudgeos/: GrudgeOS static assets
+- public/grudgeos/lib/: JavaScript libraries
+- public/grudgeos/models/: 3D models
+- public/grudgeos/textures/: Textures
+- public/grudgeos/sounds/: Audio files
+
+SHARED:
+- shared/schema.ts: Type definitions and validation
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+For AI Agents: Parse sections by === headers. Key data in KEY: value format.
+API endpoints follow: METHOD /path -> Description format.
+================================================================================

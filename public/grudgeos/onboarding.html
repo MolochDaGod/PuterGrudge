@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrudgeOS - Welcome</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg-dark: #0a0a12;
+      --bg-panel: rgba(13, 13, 26, 0.95);
+      --bg-card: rgba(18, 18, 31, 0.95);
+      --neon-cyan: #00f5ff;
+      --neon-pink: #ff00aa;
+      --neon-purple: #8b5cf6;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --text: #e8e8ff;
+      --text-secondary: #9090b0;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: 
+        radial-gradient(ellipse at 20% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 245, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 0, 170, 0.1) 0%, transparent 70%);
+    }
+    
+    .container {
+      max-width: 900px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      box-shadow: 0 0 60px rgba(139, 92, 246, 0.5);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 60px rgba(139, 92, 246, 0.5); }
+      50% { box-shadow: 0 0 80px rgba(0, 245, 255, 0.6); }
+    }
+    
+    .logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .welcome-card {
+      background: var(--bg-panel);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 20px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 16px;
+      color: var(--neon-cyan);
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .feature {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      transition: all 0.3s;
+    }
+    
+    .feature:hover {
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+    }
+    
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    
+    .feature-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .free-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      color: white;
+      padding: 18px 32px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 40px rgba(255, 0, 170, 0.4);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--neon-purple);
+      margin-top: 12px;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(139, 92, 246, 0.2);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+    
+    .status {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .status.success { color: var(--neon-green); }
+    .status.error { color: var(--neon-pink); }
+    
+    .progress-steps {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 30px;
+    }
+    
+    .step {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .step.active {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border-color: transparent;
+    }
+    
+    .step.completed {
+      background: var(--neon-green);
+      border-color: transparent;
+      color: #000;
+    }
+    
+    .setup-progress { display: none; }
+    
+    .setup-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .setup-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: var(--bg-dark);
+    }
+    
+    .setup-icon.pending { color: var(--text-secondary); }
+    .setup-icon.running { color: var(--neon-cyan); animation: spin 1s linear infinite; }
+    .setup-icon.done { background: var(--neon-green); color: #000; }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .setup-info { flex: 1; }
+    .setup-title { font-weight: 600; font-size: 14px; }
+    .setup-desc { font-size: 12px; color: var(--text-secondary); }
+    
+    .hidden { display: none !important; }
+    
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .avatar-option {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.3s;
+      background: var(--bg-card);
+    }
+    
+    .avatar-option:hover {
+      transform: scale(1.1);
+      border-color: var(--neon-purple);
+    }
+    
+    .avatar-option.selected {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+    }
+    
+    .input-group {
+      margin-bottom: 24px;
+    }
+    
+    .input-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    
+    .input-field {
+      width: 100%;
+      background: var(--bg-card);
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 16px;
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      transition: all 0.3s;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
+    }
+    
+    .input-field::placeholder {
+      color: var(--text-secondary);
+    }
+    
+    .wallpaper-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .wallpaper-option {
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.3s;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .wallpaper-option:hover {
+      transform: scale(1.02);
+      border-color: var(--neon-purple);
+    }
+    
+    .wallpaper-option.selected {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+    }
+    
+    .wallpaper-preview {
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+    }
+    
+    .wallpaper-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    .ai-model-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .ai-task-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 20px;
+      border: 2px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .ai-task-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .ai-task-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .ai-task-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    
+    .ai-task-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .model-select {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      cursor: pointer;
+    }
+    
+    .model-select:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+    }
+    
+    .model-select option {
+      background: var(--bg-dark);
+      color: var(--text);
+    }
+    
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+      margin: 30px 0;
+    }
+    
+    .section-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      color: var(--neon-purple);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">G</div>
+      <span class="logo-text">GRUDGEOS</span>
+    </div>
+    
+    <div class="welcome-card">
+      <div class="progress-steps">
+        <div class="step active" id="step1">1</div>
+        <div class="step" id="step2">2</div>
+        <div class="step" id="step3">3</div>
+        <div class="step" id="step4">4</div>
+        <div class="step" id="step5">5</div>
+      </div>
+      
+      <div id="intro-section">
+        <h1>Welcome to the Future</h1>
+        <p class="subtitle">GrudgeOS gives you access to the most powerful AI and game development tools - completely FREE. Powered by Puter's infinite AI.</p>
+        
+        <div class="features-grid">
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #3b82f6)">&#x1F9E0;</div>
+            <div class="feature-title">500+ AI Models <span class="free-badge">Free</span></div>
+            <div class="feature-desc">GPT-4o, Claude Sonnet, Gemini, Llama, DALL-E and more. No API keys needed.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #00f5ff, #00ff88)">&#x2601;&#xFE0F;</div>
+            <div class="feature-title">Cloud Storage <span class="free-badge">Free</span></div>
+            <div class="feature-desc">Store your games, assets, and projects in the cloud with instant access.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #ff00aa, #ff6b35)">&#x1F3AE;</div>
+            <div class="feature-title">Game Engine <span class="free-badge">Free</span></div>
+            <div class="feature-desc">PlayCanvas WebGL engine with real-time collaboration and 3D editing.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #00ff88, #00f5ff)">&#x1F916;</div>
+            <div class="feature-title">AI Agents <span class="free-badge">Free</span></div>
+            <div class="feature-desc">Autonomous AI workers that learn, adapt, and improve your workflow.</div>
+          </div>
+        </div>
+        
+        <button class="btn" id="startBtn" data-testid="button-start">Connect with Puter</button>
+        <div class="status" id="status"></div>
+      </div>
+      
+      <div id="profile-section" class="hidden">
+        <h1>Create Your Profile</h1>
+        <p class="subtitle">Personalize your GrudgeOS experience</p>
+        
+        <div class="section-label">Choose Your Avatar</div>
+        <div class="avatar-grid" id="avatarGrid">
+          <div class="avatar-option selected" data-avatar="cyber-wolf" data-testid="avatar-cyber-wolf">&#x1F43A;</div>
+          <div class="avatar-option" data-avatar="neon-cat" data-testid="avatar-neon-cat">&#x1F431;</div>
+          <div class="avatar-option" data-avatar="robot" data-testid="avatar-robot">&#x1F916;</div>
+          <div class="avatar-option" data-avatar="alien" data-testid="avatar-alien">&#x1F47D;</div>
+          <div class="avatar-option" data-avatar="ninja" data-testid="avatar-ninja">&#x1F977;</div>
+          <div class="avatar-option" data-avatar="astronaut" data-testid="avatar-astronaut">&#x1F468;&#x200D;&#x1F680;</div>
+          <div class="avatar-option" data-avatar="dragon" data-testid="avatar-dragon">&#x1F409;</div>
+          <div class="avatar-option" data-avatar="phoenix" data-testid="avatar-phoenix">&#x1F426;&#x200D;&#x1F525;</div>
+          <div class="avatar-option" data-avatar="ghost" data-testid="avatar-ghost">&#x1F47B;</div>
+          <div class="avatar-option" data-avatar="skull" data-testid="avatar-skull">&#x1F480;</div>
+          <div class="avatar-option" data-avatar="wizard" data-testid="avatar-wizard">&#x1F9D9;</div>
+          <div class="avatar-option" data-avatar="cyborg" data-testid="avatar-cyborg">&#x1F9BF;</div>
+        </div>
+        
+        <div class="input-group">
+          <label class="input-label">Display Name</label>
+          <input type="text" class="input-field" id="displayName" placeholder="Enter your display name..." data-testid="input-display-name">
+        </div>
+        
+        <div class="section-divider"></div>
+        <div class="section-label">Select Wallpaper</div>
+        <div class="wallpaper-grid" id="wallpaperGrid">
+          <div class="wallpaper-option selected" data-wallpaper="cyberpunk-city" data-testid="wallpaper-cyberpunk">
+            <div class="wallpaper-preview" style="background: linear-gradient(135deg, #1a0a2e 0%, #0f1a3d 50%, #00f5ff20 100%)"></div>
+            <div class="wallpaper-name">Cyberpunk City</div>
+          </div>
+          <div class="wallpaper-option" data-wallpaper="neon-grid" data-testid="wallpaper-neon">
+            <div class="wallpaper-preview" style="background: linear-gradient(180deg, #0a0a12 0%, #1a0a3e 50%, #ff00aa30 100%)"></div>
+            <div class="wallpaper-name">Neon Grid</div>
+          </div>
+          <div class="wallpaper-option" data-wallpaper="deep-space" data-testid="wallpaper-space">
+            <div class="wallpaper-preview" style="background: linear-gradient(135deg, #000510 0%, #0a1628 50%, #8b5cf620 100%)"></div>
+            <div class="wallpaper-name">Deep Space</div>
+          </div>
+          <div class="wallpaper-option" data-wallpaper="matrix" data-testid="wallpaper-matrix">
+            <div class="wallpaper-preview" style="background: linear-gradient(180deg, #000 0%, #001a00 50%, #00ff8830 100%)"></div>
+            <div class="wallpaper-name">Matrix</div>
+          </div>
+          <div class="wallpaper-option" data-wallpaper="aurora" data-testid="wallpaper-aurora">
+            <div class="wallpaper-preview" style="background: linear-gradient(135deg, #0a0a1a 0%, #1a2a4a 40%, #00f5ff40 70%, #ff00aa20 100%)"></div>
+            <div class="wallpaper-name">Aurora</div>
+          </div>
+          <div class="wallpaper-option" data-wallpaper="minimal-dark" data-testid="wallpaper-minimal">
+            <div class="wallpaper-preview" style="background: #0a0a12"></div>
+            <div class="wallpaper-name">Minimal Dark</div>
+          </div>
+        </div>
+        
+        <button class="btn" id="profileNextBtn" data-testid="button-profile-next">Continue</button>
+      </div>
+      
+      <div id="ai-section" class="hidden">
+        <h1>AI Preferences</h1>
+        <p class="subtitle">Choose your preferred AI models for different tasks. You can change these anytime.</p>
+        
+        <div class="ai-model-grid">
+          <div class="ai-task-card">
+            <div class="ai-task-header">
+              <div class="ai-task-icon" style="background: linear-gradient(135deg, #8b5cf6, #3b82f6)">&#x1F4BB;</div>
+              <div>
+                <div class="ai-task-title">Code Generation</div>
+                <div class="ai-task-desc">Writing & fixing code</div>
+              </div>
+            </div>
+            <select class="model-select" id="codeModel" data-testid="select-code-model">
+              <option value="claude-sonnet-4" selected>Claude Sonnet 4 (Best)</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="deepseek-chat">DeepSeek</option>
+              <option value="codellama-70b">CodeLlama 70B</option>
+            </select>
+          </div>
+          
+          <div class="ai-task-card">
+            <div class="ai-task-header">
+              <div class="ai-task-icon" style="background: linear-gradient(135deg, #00f5ff, #00ff88)">&#x1F4AC;</div>
+              <div>
+                <div class="ai-task-title">Chat & Assistance</div>
+                <div class="ai-task-desc">General help & questions</div>
+              </div>
+            </div>
+            <select class="model-select" id="chatModel" data-testid="select-chat-model">
+              <option value="gpt-4o" selected>GPT-4o (Best)</option>
+              <option value="claude-sonnet-4">Claude Sonnet 4</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="llama-3.3-70b">Llama 3.3 70B</option>
+            </select>
+          </div>
+          
+          <div class="ai-task-card">
+            <div class="ai-task-header">
+              <div class="ai-task-icon" style="background: linear-gradient(135deg, #ff00aa, #ff6b35)">&#x1F3A8;</div>
+              <div>
+                <div class="ai-task-title">Creative & Art</div>
+                <div class="ai-task-desc">Design & visual ideas</div>
+              </div>
+            </div>
+            <select class="model-select" id="creativeModel" data-testid="select-creative-model">
+              <option value="gpt-4o" selected>GPT-4o (Best)</option>
+              <option value="claude-sonnet-4">Claude Sonnet 4</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            </select>
+          </div>
+          
+          <div class="ai-task-card">
+            <div class="ai-task-header">
+              <div class="ai-task-icon" style="background: linear-gradient(135deg, #00ff88, #00f5ff)">&#x1F4CA;</div>
+              <div>
+                <div class="ai-task-title">Analysis & Reasoning</div>
+                <div class="ai-task-desc">Data & complex thinking</div>
+              </div>
+            </div>
+            <select class="model-select" id="analysisModel" data-testid="select-analysis-model">
+              <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (Best)</option>
+              <option value="claude-sonnet-4">Claude Sonnet 4</option>
+              <option value="o1-mini">GPT o1-mini</option>
+              <option value="gpt-4o">GPT-4o</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <div class="ai-task-card" style="margin-bottom: 30px;">
+          <div class="ai-task-header">
+            <div class="ai-task-icon" style="background: linear-gradient(135deg, #ff6b35, #ff00aa)">&#x26A1;</div>
+            <div>
+              <div class="ai-task-title">Auto-Select Mode</div>
+              <div class="ai-task-desc">Let GrudgeOS pick the best model for each task automatically</div>
+            </div>
+          </div>
+          <select class="model-select" id="autoSelect" data-testid="select-auto-mode">
+            <option value="enabled" selected>Enabled (Recommended)</option>
+            <option value="disabled">Disabled - Use my selections</option>
+          </select>
+        </div>
+        
+        <button class="btn" id="aiNextBtn" data-testid="button-ai-next">Continue</button>
+      </div>
+      
+      <div id="setup-section" class="hidden">
+        <h1>Setting Up Your Studio</h1>
+        <p class="subtitle">Creating your personalized AI-powered workspace...</p>
+        
+        <div class="setup-progress" id="setupProgress">
+          <div class="setup-item" id="setup-auth">
+            <div class="setup-icon pending">&#x1F510;</div>
+            <div class="setup-info">
+              <div class="setup-title">Authenticating Account</div>
+              <div class="setup-desc">Connecting to Puter cloud services</div>
+            </div>
+          </div>
+          <div class="setup-item" id="setup-profile">
+            <div class="setup-icon pending">&#x1F464;</div>
+            <div class="setup-info">
+              <div class="setup-title">Saving Profile</div>
+              <div class="setup-desc">Storing your avatar and preferences</div>
+            </div>
+          </div>
+          <div class="setup-item" id="setup-storage">
+            <div class="setup-icon pending">&#x2601;&#xFE0F;</div>
+            <div class="setup-info">
+              <div class="setup-title">Creating Cloud Storage</div>
+              <div class="setup-desc">Setting up GrudgeCloud directories</div>
+            </div>
+          </div>
+          <div class="setup-item" id="setup-agents">
+            <div class="setup-icon pending">&#x1F916;</div>
+            <div class="setup-info">
+              <div class="setup-title">Initializing AI Agents</div>
+              <div class="setup-desc">Deploying your personal AI workforce</div>
+            </div>
+          </div>
+          <div class="setup-item" id="setup-system">
+            <div class="setup-icon pending">&#x2699;&#xFE0F;</div>
+            <div class="setup-info">
+              <div class="setup-title">Configuring GRD-17 System</div>
+              <div class="setup-desc">Optimizing virtual memory and compression</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="complete-section" class="hidden">
+        <h1>You're All Set!</h1>
+        <p class="subtitle">Your GrudgeOS studio is ready. Welcome aboard!</p>
+        
+        <div class="features-grid">
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #ff00aa)">&#x1F3A8;</div>
+            <div class="feature-title">AI Studio</div>
+            <div class="feature-desc">Generate games, fix code, create NPCs with AI assistance.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #00f5ff, #3b82f6)">&#x1F310;</div>
+            <div class="feature-title">Agent Swarm</div>
+            <div class="feature-desc">Multiple AI agents working together to solve complex tasks.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #00ff88, #00f5ff)">&#x1F4BB;</div>
+            <div class="feature-title">Task Manager</div>
+            <div class="feature-desc">Monitor processes, memory, and system performance.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, #ff6b35, #ff00aa)">&#x2601;&#xFE0F;</div>
+            <div class="feature-title">GrudgeCloud</div>
+            <div class="feature-desc">Unified storage connecting all your apps and data.</div>
+          </div>
+        </div>
+        
+        <button class="btn" id="launchBtn" data-testid="button-launch">Launch GrudgeOS Desktop</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let user = null;
+    let isNewUser = false;
+    let userProfile = {
+      avatar: 'cyber-wolf',
+      displayName: '',
+      wallpaper: 'cyberpunk-city',
+      aiModels: {
+        code: 'claude-sonnet-4',
+        chat: 'gpt-4o',
+        creative: 'gpt-4o',
+        analysis: 'gemini-2.0-flash',
+        autoSelect: true
+      }
+    };
+    
+    async function checkExistingUser() {
+      try {
+        user = await puter.auth.getUser();
+        if (user) {
+          const hasSetup = await puter.kv.get('grudgeos_setup_complete');
+          if (hasSetup === 'true') {
+            window.location.href = '/grudgeos/desktop';
+            return true;
+          }
+          isNewUser = !hasSetup;
+          userProfile.displayName = user.username || '';
+          document.getElementById('displayName').value = userProfile.displayName;
+        }
+      } catch (e) {}
+      return false;
+    }
+    
+    document.getElementById('avatarGrid').addEventListener('click', (e) => {
+      const option = e.target.closest('.avatar-option');
+      if (option) {
+        document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        userProfile.avatar = option.dataset.avatar;
+      }
+    });
+    
+    document.getElementById('wallpaperGrid').addEventListener('click', (e) => {
+      const option = e.target.closest('.wallpaper-option');
+      if (option) {
+        document.querySelectorAll('.wallpaper-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        userProfile.wallpaper = option.dataset.wallpaper;
+      }
+    });
+    
+    document.getElementById('startBtn').addEventListener('click', async function() {
+      const btn = this;
+      const status = document.getElementById('status');
+      
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+      
+      try {
+        await puter.auth.signIn();
+        user = await puter.auth.getUser();
+        
+        status.textContent = `Welcome, ${user.username}!`;
+        status.className = 'status success';
+        
+        userProfile.displayName = user.username || '';
+        document.getElementById('displayName').value = userProfile.displayName;
+        
+        const hasSetup = await puter.kv.get('grudgeos_setup_complete');
+        isNewUser = !hasSetup || hasSetup !== 'true';
+        
+        if (isNewUser) {
+          setTimeout(() => showProfileSection(), 800);
+        } else {
+          window.location.href = '/grudgeos/desktop';
+        }
+      } catch (e) {
+        status.textContent = 'Connection failed. Please try again.';
+        status.className = 'status error';
+        btn.disabled = false;
+        btn.textContent = 'Connect with Puter';
+      }
+    });
+    
+    function showProfileSection() {
+      document.getElementById('intro-section').classList.add('hidden');
+      document.getElementById('profile-section').classList.remove('hidden');
+      document.getElementById('step1').classList.remove('active');
+      document.getElementById('step1').classList.add('completed');
+      document.getElementById('step2').classList.add('active');
+    }
+    
+    document.getElementById('profileNextBtn').addEventListener('click', () => {
+      userProfile.displayName = document.getElementById('displayName').value.trim() || user.username || 'User';
+      showAISection();
+    });
+    
+    function showAISection() {
+      document.getElementById('profile-section').classList.add('hidden');
+      document.getElementById('ai-section').classList.remove('hidden');
+      document.getElementById('step2').classList.remove('active');
+      document.getElementById('step2').classList.add('completed');
+      document.getElementById('step3').classList.add('active');
+    }
+    
+    document.getElementById('aiNextBtn').addEventListener('click', () => {
+      userProfile.aiModels = {
+        code: document.getElementById('codeModel').value,
+        chat: document.getElementById('chatModel').value,
+        creative: document.getElementById('creativeModel').value,
+        analysis: document.getElementById('analysisModel').value,
+        autoSelect: document.getElementById('autoSelect').value === 'enabled'
+      };
+      startSetup();
+    });
+    
+    async function startSetup() {
+      document.getElementById('ai-section').classList.add('hidden');
+      document.getElementById('setup-section').classList.remove('hidden');
+      document.getElementById('setupProgress').style.display = 'block';
+      
+      document.getElementById('step3').classList.remove('active');
+      document.getElementById('step3').classList.add('completed');
+      document.getElementById('step4').classList.add('active');
+      
+      await runSetupStep('setup-auth', async () => {
+        await new Promise(r => setTimeout(r, 600));
+      });
+      
+      await runSetupStep('setup-profile', async () => {
+        await puter.kv.set('grudgeos_profile', JSON.stringify(userProfile));
+        await new Promise(r => setTimeout(r, 500));
+      });
+      
+      await runSetupStep('setup-storage', async () => {
+        try {
+          await puter.fs.mkdir('/GrudgeOS');
+          await puter.fs.mkdir('/GrudgeOS/Projects');
+          await puter.fs.mkdir('/GrudgeOS/Assets');
+          await puter.fs.mkdir('/GrudgeOS/Games');
+          await puter.fs.mkdir('/GrudgeOS/Audio');
+          await puter.fs.mkdir('/GrudgeOS/Documents');
+          await puter.fs.mkdir('/GrudgeOS/Screenshots');
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 500));
+      });
+      
+      await runSetupStep('setup-agents', async () => {
+        const defaultAgents = [
+          { id: 'orchestrator', status: 'active', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'code-agent', status: 'active', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'art-agent', status: 'active', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'analyst', status: 'active', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'lua-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'rust-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'threejs-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'phaser-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'colyseus-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' },
+          { id: 'network-agent', status: 'dormant', level: 1, xp: 0, tasksCompleted: 0, learningState: 'ready' }
+        ];
+        await puter.kv.set('grudgeos_agents', JSON.stringify(defaultAgents));
+        await new Promise(r => setTimeout(r, 600));
+      });
+      
+      await runSetupStep('setup-system', async () => {
+        await puter.kv.set('grudgeos_system', JSON.stringify({
+          version: '1.0.0',
+          grd17: {
+            enabled: true,
+            compressionLevel: 'optimal',
+            virtualMemory: 16384,
+            swapSize: 8192,
+            cacheSize: 4096
+          },
+          performance: {
+            cpuThrottling: false,
+            gpuAcceleration: true,
+            memoryOptimization: true
+          }
+        }));
+        await puter.kv.set('grudgeos_config', JSON.stringify({
+          theme: 'cyberpunk',
+          wallpaper: userProfile.wallpaper,
+          defaultModel: userProfile.aiModels.code,
+          autoSelect: userProfile.aiModels.autoSelect,
+          autoSave: true,
+          createdAt: new Date().toISOString()
+        }));
+        await puter.kv.set('grudgeos_setup_complete', 'true');
+        await new Promise(r => setTimeout(r, 500));
+      });
+      
+      document.getElementById('step4').classList.remove('active');
+      document.getElementById('step4').classList.add('completed');
+      document.getElementById('step5').classList.add('completed');
+      
+      setTimeout(() => {
+        document.getElementById('setup-section').classList.add('hidden');
+        document.getElementById('complete-section').classList.remove('hidden');
+      }, 500);
+    }
+    
+    async function runSetupStep(stepId, action) {
+      const step = document.getElementById(stepId);
+      const icon = step.querySelector('.setup-icon');
+      
+      icon.classList.remove('pending');
+      icon.classList.add('running');
+      icon.textContent = '\u27F3';
+      
+      await action();
+      
+      icon.classList.remove('running');
+      icon.classList.add('done');
+      icon.textContent = '\u2713';
+    }
+    
+    document.getElementById('launchBtn').addEventListener('click', () => {
+      window.location.href = '/grudgeos/desktop';
+    });
+    
+    checkExistingUser();
+  </script>
+</body>
+</html>

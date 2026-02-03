@@ -1,0 +1,3047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Swarm Network - GrudgeOS</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <link rel="stylesheet" href="styles/common.css">
+  <script src="./lib/window-manager.js"></script>
+  <script src="./lib/screen-in-screen.js"></script>
+  <script src="./lib/grudchat-service.js"></script>
+  <script src="./lib/vm-sandbox.js"></script>
+  <script src="./lib/event-bus.js" type="module"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    :root {
+      --bg-dark: #0a0a12;
+      --bg-panel: rgba(13, 13, 26, 0.95);
+      --bg-card: rgba(18, 18, 31, 0.95);
+      --bg-input: rgba(8, 8, 16, 0.9);
+      --neon-cyan: #00f5ff;
+      --neon-pink: #ff00aa;
+      --neon-purple: #8b5cf6;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --neon-blue: #3b82f6;
+      --text: #e8e8ff;
+      --text-secondary: #9090b0;
+      --border: rgba(139, 92, 246, 0.3);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(ellipse at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 245, 255, 0.1) 0%, transparent 50%);
+    }
+    
+    .app-container {
+      display: flex;
+      height: 100vh;
+      padding: 16px;
+      gap: 16px;
+    }
+    
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .panel-header-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    
+    /* Left Panel - Agent Selection */
+    .agents-panel {
+      width: 260px;
+      flex-shrink: 0;
+    }
+    
+    .agent-card {
+      background: var(--bg-card);
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .agent-card:hover {
+      border-color: var(--neon-purple);
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .agent-card.selected {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+      background: rgba(0, 245, 255, 0.08);
+    }
+    
+    .agent-card.active {
+      border-color: var(--neon-green);
+      animation: active-pulse 2s infinite;
+    }
+    
+    @keyframes active-pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(0, 255, 136, 0.5); }
+    }
+    
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .agent-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    }
+    
+    .agent-info {
+      flex: 1;
+    }
+    
+    .agent-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .agent-role {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .agent-status {
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    
+    .agent-status.online { background: rgba(0, 255, 136, 0.2); color: var(--neon-green); }
+    .agent-status.working { background: rgba(0, 245, 255, 0.2); color: var(--neon-cyan); }
+    .agent-status.offline { background: rgba(80, 80, 112, 0.3); color: var(--text-secondary); }
+    
+    .section-divider {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      padding: 12px 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    
+    /* Middle Panel - AI VM Workspace */
+    .vm-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .vm-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .vm-tab {
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .vm-tab:hover {
+      border-color: var(--neon-purple);
+      color: var(--text);
+    }
+    
+    .vm-tab.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(0, 245, 255, 0.2));
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+    
+    .vm-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .infrastructure-view {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+    
+    .infra-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .infra-card:hover {
+      border-color: var(--neon-purple);
+      transform: translateY(-2px);
+    }
+    
+    .infra-card.active {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    }
+    
+    .infra-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .infra-name {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .infra-status {
+      font-size: 10px;
+      color: var(--neon-green);
+    }
+    
+    .infra-status.pending { color: var(--neon-orange); }
+    .infra-status.offline { color: var(--text-secondary); }
+    
+    /* AI Response Editor */
+    .response-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+      overflow: hidden;
+    }
+    
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .response-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      color: var(--neon-cyan);
+    }
+    
+    .response-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .action-btn:hover {
+      border-color: var(--neon-purple);
+    }
+    
+    .action-btn.primary {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+    }
+    
+    .action-btn.primary:hover {
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+    }
+    
+    .action-btn.success {
+      background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+      border: none;
+      color: #000;
+    }
+    
+    .editor-container {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .editor-toolbar {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .editor-toolbar-btn {
+      padding: 4px 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    
+    .editor-toolbar-btn:hover {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+    
+    .editor-textarea {
+      flex: 1;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 12px;
+      resize: none;
+      line-height: 1.6;
+    }
+    
+    .editor-textarea:focus {
+      outline: none;
+    }
+    
+    .editor-textarea::placeholder {
+      color: var(--text-secondary);
+    }
+    
+    /* Deploy Options Panel */
+    .deploy-options {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    
+    .deploy-options-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+    
+    .deploy-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .deploy-option {
+      padding: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .deploy-option:hover {
+      border-color: var(--neon-purple);
+    }
+    
+    .deploy-option.selected {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.1);
+    }
+    
+    .deploy-option-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    
+    .deploy-option-name {
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    /* Right Panel - Communication */
+    .comm-panel {
+      width: 300px;
+      flex-shrink: 0;
+    }
+    
+    .message-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 12px;
+      border-left: 3px solid var(--neon-purple);
+    }
+    
+    .message.system { border-left-color: var(--neon-orange); }
+    .message.success { border-left-color: var(--neon-green); }
+    .message.error { border-left-color: #ff4444; }
+    
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .message-sender {
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .message-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+    
+    .message-content {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .input-area {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .input-row input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+    }
+    
+    .input-row input:focus {
+      outline: none;
+      border-color: var(--neon-purple);
+    }
+    
+    .send-btn {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .send-btn:hover {
+      box-shadow: 0 0 20px rgba(255, 0, 170, 0.4);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--neon-purple); border-radius: 3px; }
+    
+    /* Loading animation */
+    .thinking {
+      display: flex;
+      gap: 4px;
+      padding: 8px 0;
+    }
+    
+    .thinking span {
+      width: 6px;
+      height: 6px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    
+    .thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Best practices view */
+    .best-practices {
+      padding: 16px;
+    }
+    
+    .practice-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    
+    .practice-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    
+    .practice-icon {
+      font-size: 18px;
+    }
+    
+    .practice-title {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .practice-content {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .practice-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    
+    .hidden { display: none !important; }
+    
+    /* Window container for floating windows */
+    .window-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .window-container > * {
+      pointer-events: auto;
+    }
+    
+    /* Taskbar for minimized windows */
+    .taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 260px;
+      right: 300px;
+      height: 40px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      overflow-x: auto;
+      z-index: 1001;
+    }
+    
+    .taskbar-item {
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    
+    .taskbar-item:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.1);
+    }
+    
+    /* Live Preview styles */
+    .live-preview-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+    }
+    
+    /* Monaco Editor container */
+    .monaco-container {
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Quick action buttons */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .quick-action-btn {
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .quick-action-btn:hover {
+      border-color: var(--neon-green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+    
+    .quick-action-btn.primary {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: var(--neon-green);
+    }
+    
+    /* GrudChat panel */
+    .grudchat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .grudchat-header {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .grudchat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    
+    .grudchat-input {
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    
+    .grudchat-input input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      color: var(--text);
+    }
+    
+    /* Terminal View Styles */
+    .terminal-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 10px;
+    }
+    
+    .terminal-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #0a0a0f;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .terminal-btn, .terminal-mode-select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    
+    .terminal-btn:hover { border-color: var(--neon-cyan); }
+    
+    .terminal-output {
+      flex: 1;
+      padding: 12px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .terminal-output span {
+      display: block;
+    }
+    
+    .terminal-input-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      gap: 8px;
+    }
+    
+    .terminal-prompt {
+      color: var(--neon-green);
+      font-weight: bold;
+    }
+    
+    .terminal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+    }
+    
+    .terminal-run-btn {
+      background: linear-gradient(135deg, var(--neon-green), #22c55e);
+      border: none;
+      color: #000;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .terminal-quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .quick-cmd {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--neon-cyan);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    
+    .quick-cmd:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.1);
+    }
+    
+    /* Files View Styles */
+    .files-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 10px;
+    }
+    
+    .files-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .files-path-input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    
+    .files-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .files-btn:hover { border-color: var(--neon-cyan); }
+    .files-btn.primary {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+      border: none;
+      color: #fff;
+    }
+    
+    .files-list {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .file-item:hover { background: rgba(139, 92, 246, 0.1); }
+    
+    .file-icon {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .file-name {
+      flex: 1;
+      font-size: 13px;
+    }
+    
+    .files-preview {
+      height: 150px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      overflow: auto;
+    }
+    
+    .preview-placeholder {
+      color: var(--text-muted);
+      text-align: center;
+      padding-top: 50px;
+    }
+    
+    /* AI Command View Styles */
+    .ai-cmd-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 10px;
+    }
+    
+    .ai-model-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .ai-model-select {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    
+    .ai-chat-area {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    .ai-message {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .ai-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    
+    .ai-content {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .ai-content strong {
+      color: var(--neon-cyan);
+    }
+    
+    .ai-input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .ai-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: none;
+    }
+    
+    .ai-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    
+    .ai-action-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .ai-action-btn:hover { border-color: var(--neon-purple); }
+    .ai-action-btn.primary {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      color: #fff;
+    }
+    
+    /* Deploy View Styles */
+    .deploy-view {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      overflow-y: auto;
+    }
+    
+    .deploy-section {
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+    
+    .deploy-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+      margin-bottom: 12px;
+    }
+    
+    .deploy-targets {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .deploy-target {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      min-width: 140px;
+    }
+    
+    .deploy-target:hover {
+      border-color: var(--neon-purple);
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .deploy-target-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: #fff;
+    }
+    
+    .deploy-target-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .deploy-target-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .deployments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .deployment-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: var(--bg-input);
+      border-radius: 6px;
+    }
+    
+    .deployment-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    
+    .deployment-status.active {
+      background: var(--neon-green);
+      box-shadow: 0 0 8px var(--neon-green);
+    }
+    
+    .deployment-name {
+      flex: 1;
+      font-size: 12px;
+    }
+    
+    .deployment-date {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .deploy-code-area {
+      width: 100%;
+      min-height: 100px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+    
+    .deploy-config {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .deploy-input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+    
+    .deploy-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .deploy-btn.primary {
+      background: linear-gradient(135deg, var(--neon-green), #22c55e);
+      border: none;
+      color: #000;
+      font-weight: 600;
+    }
+
+    /* System Navigation Bar */
+    .system-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 12px;
+      z-index: 9999;
+    }
+    
+    .nav-home-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .nav-home-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px var(--neon-purple);
+    }
+    
+    .nav-home-btn img {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+    }
+    
+    .nav-title {
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .nav-title img {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    
+    .nav-spacer {
+      flex: 1;
+    }
+    
+    .nav-status {
+      font-size: 11px;
+      color: var(--neon-green);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .nav-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    /* Adjust main container for nav bar */
+    .app-container {
+      margin-top: 36px;
+      height: calc(100vh - 36px);
+    }
+  </style>
+</head>
+<body>
+  <!-- System Navigation Bar -->
+  <nav class="system-nav">
+    <button class="nav-home-btn" onclick="window.location.href='/grudgeos/desktop.html'" data-testid="btn-home">
+      <img src="/grudgeos/assets/agents/cloudpilot.png" alt="Home">
+      Desktop
+    </button>
+    <div class="nav-title">
+      <img src="/grudgeos/assets/agents/agent-purple.png" alt="Agent Swarm">
+      Agent Swarm Control
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-status">System Online</div>
+  </nav>
+  
+  <div class="app-container">
+    <!-- Left Panel: Agent Selection -->
+    <div class="panel agents-panel">
+      <div class="panel-header">
+        <img src="/grudgeos/assets/agents/agent-purple.png" class="panel-header-icon" style="width:24px;height:24px;border-radius:4px;">
+        Select Agent
+      </div>
+      <div class="panel-content" id="agentList"></div>
+    </div>
+    
+    <!-- Middle Panel: AI VM Workspace -->
+    <div class="panel vm-panel">
+      <div class="panel-header">
+        <img src="/grudgeos/assets/agents/agent-blue.png" class="panel-header-icon" style="width:24px;height:24px;border-radius:4px;">
+        AI VM Workspace
+        <span id="connection-status" style="margin-left: auto; font-size: 10px; color: var(--neon-orange);">* Initializing</span>
+      </div>
+      <div class="vm-toolbar">
+        <button class="vm-tab active" data-view="terminal" data-testid="tab-terminal">
+          Terminal
+        </button>
+        <button class="vm-tab" data-view="files" data-testid="tab-files">
+          Files
+        </button>
+        <button class="vm-tab" data-view="ai-cmd" data-testid="tab-ai-cmd">
+          AI Command
+        </button>
+        <button class="vm-tab" data-view="deploy" data-testid="tab-deploy">
+          Deploy
+        </button>
+        <button class="vm-tab" data-view="infrastructure" data-testid="tab-infrastructure">
+          Infra
+        </button>
+      </div>
+      <div class="vm-content">
+        <!-- Terminal View -->
+        <div id="terminal-view" class="terminal-view">
+          <div class="terminal-container">
+            <div class="terminal-header">
+              <span style="color:var(--neon-green);">CloudPilot QuickJS Sandbox</span>
+              <div style="display:flex;gap:8px;">
+                <button class="terminal-btn" onclick="clearTerminal()" data-testid="btn-clear-terminal">Clear</button>
+                <select id="terminalMode" class="terminal-mode-select" data-testid="select-terminal-mode">
+                  <option value="js">JavaScript</option>
+                  <option value="ai">AI Chat</option>
+                </select>
+              </div>
+            </div>
+            <div class="terminal-output" id="terminalOutput">
+<span style="color:var(--neon-cyan);">CloudPilot AI VM v1.0.0</span>
+<span style="color:var(--text-secondary);">Secure QuickJS Sandbox - JavaScript execution environment</span>
+<span style="color:var(--neon-green);">Type 'help' for available commands</span>
+<span style="color:var(--text-secondary);">Ready&gt;</span>
+            </div>
+            <div class="terminal-input-row">
+              <span class="terminal-prompt">&gt;</span>
+              <input type="text" class="terminal-input" id="terminalInput" placeholder="Enter JavaScript code or command..." data-testid="input-terminal" autocomplete="off">
+              <button class="terminal-run-btn" onclick="executeTerminal()" data-testid="btn-run-terminal">Run</button>
+            </div>
+          </div>
+          <div class="terminal-quick-actions">
+            <button class="quick-cmd" data-cmd="help" data-testid="btn-cmd-help">help</button>
+            <button class="quick-cmd" data-cmd="puter.auth.getUser()" data-testid="btn-cmd-auth">auth.user</button>
+            <button class="quick-cmd" data-cmd="puter.kv.list()" data-testid="btn-cmd-kv">kv.list</button>
+            <button class="quick-cmd" data-cmd='puter.fs.readdir("/")' data-testid="btn-cmd-fs">fs.readdir</button>
+            <button class="quick-cmd" data-cmd="return 2+2" data-testid="btn-cmd-math">test math</button>
+          </div>
+        </div>
+        
+        <!-- Files View -->
+        <div id="files-view" class="files-view hidden">
+          <div class="files-toolbar">
+            <input type="text" class="files-path-input" id="currentPath" value="/" placeholder="/" data-testid="input-path">
+            <button class="files-btn" onclick="navigateUp()" data-testid="btn-nav-up">Up</button>
+            <button class="files-btn" onclick="refreshFiles()" data-testid="btn-refresh-files">Refresh</button>
+            <button class="files-btn primary" onclick="showNewFileDialog()" data-testid="btn-new-file">+ New</button>
+          </div>
+          <div class="files-list" id="filesList">
+            <div class="file-item folder" onclick="navigateTo('/apps')">
+              <span class="file-icon" style="background:#8b5cf6;">DIR</span>
+              <span class="file-name">apps/</span>
+            </div>
+            <div class="file-item folder" onclick="navigateTo('/data')">
+              <span class="file-icon" style="background:#00f5ff;">DIR</span>
+              <span class="file-name">data/</span>
+            </div>
+            <div class="file-item file" onclick="openFile('/config.json')">
+              <span class="file-icon" style="background:#00ff88;">JSON</span>
+              <span class="file-name">config.json</span>
+            </div>
+          </div>
+          <div class="files-preview" id="filePreview">
+            <div class="preview-placeholder">Select a file to preview</div>
+          </div>
+        </div>
+        
+        <!-- AI Command View -->
+        <div id="ai-cmd-view" class="ai-cmd-view hidden">
+          <div class="ai-model-selector">
+            <span style="color:var(--text-secondary);font-size:12px;">Model:</span>
+            <select id="aiModel" class="ai-model-select" data-testid="select-ai-model">
+              <option value="gpt-4o">GPT-4o (Free via Puter)</option>
+              <option value="claude-sonnet-4">Claude Sonnet 4</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              <option value="deepseek-chat">DeepSeek Chat</option>
+            </select>
+          </div>
+          <div class="ai-chat-area" id="aiChatArea">
+            <div class="ai-message system">
+              <img src="/grudgeos/assets/agents/cloudpilot.png" class="ai-avatar">
+              <div class="ai-content">
+                <strong>CloudPilot AI</strong>
+                <p>I'm your autonomous AI assistant. I can help you:</p>
+                <ul style="margin:8px 0;padding-left:20px;color:var(--text-secondary);">
+                  <li>Generate and execute code</li>
+                  <li>Manage files and deployments</li>
+                  <li>Build complete applications</li>
+                  <li>Analyze and optimize your projects</li>
+                </ul>
+                <p>What would you like to build today?</p>
+              </div>
+            </div>
+          </div>
+          <div class="ai-input-area">
+            <textarea id="aiInput" class="ai-input" placeholder="Describe what you want CloudPilot to build..." rows="3" data-testid="textarea-ai-input"></textarea>
+            <div class="ai-actions">
+              <button class="ai-action-btn" onclick="sendAICommand('explain')" data-testid="btn-ai-explain">Explain</button>
+              <button class="ai-action-btn" onclick="sendAICommand('code')" data-testid="btn-ai-code">Generate Code</button>
+              <button class="ai-action-btn primary" onclick="sendAICommand('execute')" data-testid="btn-ai-execute">Build & Execute</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Deploy View -->
+        <div id="deploy-view" class="deploy-view hidden">
+          <div class="deploy-section">
+            <h3 class="deploy-section-title">Quick Deploy</h3>
+            <div class="deploy-targets">
+              <div class="deploy-target" onclick="deployTo('puter-site')" data-testid="deploy-target-site">
+                <div class="deploy-target-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">WEB</div>
+                <div class="deploy-target-info">
+                  <div class="deploy-target-name">puter.site</div>
+                  <div class="deploy-target-desc">Free static hosting</div>
+                </div>
+              </div>
+              <div class="deploy-target" onclick="deployTo('puter-kv')" data-testid="deploy-target-kv">
+                <div class="deploy-target-icon" style="background:linear-gradient(135deg,#00ff88,#22c55e);">KV</div>
+                <div class="deploy-target-info">
+                  <div class="deploy-target-name">Puter KV</div>
+                  <div class="deploy-target-desc">Key-value storage</div>
+                </div>
+              </div>
+              <div class="deploy-target" onclick="deployTo('puter-fs')" data-testid="deploy-target-fs">
+                <div class="deploy-target-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);">FS</div>
+                <div class="deploy-target-info">
+                  <div class="deploy-target-name">Puter FS</div>
+                  <div class="deploy-target-desc">Cloud filesystem</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="deploy-section">
+            <h3 class="deploy-section-title">Active Deployments</h3>
+            <div id="deploymentsList" class="deployments-list">
+              <div class="deployment-item">
+                <span class="deployment-status active"></span>
+                <span class="deployment-name">my-app.puter.site</span>
+                <span class="deployment-date">Active</span>
+              </div>
+            </div>
+          </div>
+          <div class="deploy-section">
+            <h3 class="deploy-section-title">Deploy from Editor</h3>
+            <textarea id="deployCode" class="deploy-code-area" placeholder="Paste HTML/JS code here to deploy..." data-testid="textarea-deploy-code"></textarea>
+            <div class="deploy-config">
+              <input type="text" id="deploySiteName" class="deploy-input" placeholder="site-name" data-testid="input-site-name">
+              <span style="color:var(--text-secondary);">.puter.site</span>
+              <button class="deploy-btn primary" onclick="deployNow()" data-testid="btn-deploy-now">Deploy Now</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Infrastructure View -->
+        <div id="infrastructure-view" class="infrastructure-view hidden">
+          <div class="infra-card active" data-type="vpn" data-testid="infra-vpn">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">VPN</div>
+            <div class="infra-name">VPN Tunnel</div>
+            <div class="infra-status">Connected</div>
+          </div>
+          <div class="infra-card active" data-type="server" data-testid="infra-server">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#00f5ff,#0ea5e9);color:#000;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">AI</div>
+            <div class="infra-name">AI Server</div>
+            <div class="infra-status">Running</div>
+          </div>
+          <div class="infra-card active" data-type="storage" data-testid="infra-storage">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#00ff88,#22c55e);color:#000;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">FS</div>
+            <div class="infra-name">Puter Storage</div>
+            <div class="infra-status">Synced</div>
+          </div>
+          <div class="infra-card" data-type="database" data-testid="infra-database">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#6b7280,#4b5563);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">DB</div>
+            <div class="infra-name">Database</div>
+            <div class="infra-status pending">Standby</div>
+          </div>
+          <div class="infra-card active" data-type="api" data-testid="infra-api">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">API</div>
+            <div class="infra-name">API Gateway</div>
+            <div class="infra-status">Active</div>
+          </div>
+          <div class="infra-card" data-type="cdn" data-testid="infra-cdn">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">CDN</div>
+            <div class="infra-name">CDN</div>
+            <div class="infra-status offline">Disabled</div>
+          </div>
+          <div class="infra-card active" data-type="auth" data-testid="infra-auth">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">KEY</div>
+            <div class="infra-name">Auth Service</div>
+            <div class="infra-status">Puter Auth</div>
+          </div>
+          <div class="infra-card" data-type="monitor" data-testid="infra-monitor">
+            <div class="infra-icon" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;">MON</div>
+            <div class="infra-name">Monitoring</div>
+            <div class="infra-status pending">Limited</div>
+          </div>
+        </div>
+        
+        <!-- Best Practices View -->
+        <div id="bestpractices-view" class="best-practices hidden">
+          <div class="practice-card">
+            <div class="practice-header">
+              <span class="practice-icon" style="background:#8b5cf6;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold;">AUTH</span>
+              <span class="practice-title">Use Puter Auth (Free)</span>
+            </div>
+            <div class="practice-content">
+              Leverage Puter's free authentication system. No need for external auth providers.
+            </div>
+            <div class="practice-actions">
+              <button class="action-btn" data-testid="btn-apply-auth">Apply</button>
+              <button class="action-btn" data-testid="btn-docs-auth">View Docs</button>
+            </div>
+          </div>
+          <div class="practice-card">
+            <div class="practice-header">
+              <span class="practice-icon" style="background:#00ff88;color:#000;padding:4px 8px;border-radius:4px;font-weight:bold;">KV</span>
+              <span class="practice-title">Puter KV for Persistence</span>
+            </div>
+            <div class="practice-content">
+              Store all data using puter.kv instead of localStorage. Free cloud storage that persists across devices.
+            </div>
+            <div class="practice-actions">
+              <button class="action-btn" data-testid="btn-apply-kv">Apply</button>
+              <button class="action-btn" data-testid="btn-docs-kv">View Docs</button>
+            </div>
+          </div>
+          <div class="practice-card">
+            <div class="practice-header">
+              <span class="practice-icon" style="background:#00f5ff;color:#000;padding:4px 8px;border-radius:4px;font-weight:bold;">AI</span>
+              <span class="practice-title">Free AI via Puter</span>
+            </div>
+            <div class="practice-content">
+              Access GPT-4o, Claude, Gemini, DeepSeek for free through Puter's AI API. No API keys needed.
+            </div>
+            <div class="practice-actions">
+              <button class="action-btn" data-testid="btn-apply-ai">Apply</button>
+              <button class="action-btn" data-testid="btn-docs-ai">View Docs</button>
+            </div>
+          </div>
+          <div class="practice-card">
+            <div class="practice-header">
+              <span class="practice-icon" style="background:#f97316;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold;">DEPLOY</span>
+              <span class="practice-title">Deploy to puter.site</span>
+            </div>
+            <div class="practice-content">
+              One-click deployment to *.puter.site with free hosting. No server configuration required.
+            </div>
+            <div class="practice-actions">
+              <button class="action-btn" data-testid="btn-apply-deploy">Apply</button>
+              <button class="action-btn" data-testid="btn-docs-deploy">View Docs</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Editor View -->
+        <div id="editor-view" class="response-area hidden">
+          <div class="response-header">
+            <span class="response-title">AI Response Editor</span>
+            <div class="response-actions">
+              <button class="action-btn" onclick="copyCode()" data-testid="btn-copy">Copy</button>
+              <button class="action-btn" onclick="clearEditor()" data-testid="btn-clear">Clear</button>
+              <button class="action-btn primary" onclick="deployInternal()" data-testid="btn-deploy-internal"><img src="/grudgeos/assets/icons/generated/deploy.png" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;">Deploy</button>
+            </div>
+          </div>
+          <div class="editor-container">
+            <div class="editor-toolbar">
+              <button class="editor-toolbar-btn">Format</button>
+              <button class="editor-toolbar-btn">Validate</button>
+              <button class="editor-toolbar-btn">Minify</button>
+            </div>
+            <textarea class="editor-textarea" id="responseEditor" placeholder="AI response will appear here. You can edit before deploying..." data-testid="textarea-response"></textarea>
+          </div>
+          <div class="deploy-options">
+            <div class="deploy-options-title">Deployment Options</div>
+            <div class="deploy-grid">
+              <div class="deploy-option selected" data-target="internal" data-testid="deploy-internal">
+                <div class="deploy-option-icon" style="background:#8b5cf6;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">INT</div>
+                <div class="deploy-option-name">Internal</div>
+              </div>
+              <div class="deploy-option" data-target="puter" data-testid="deploy-puter">
+                <div class="deploy-option-icon" style="background:#00f5ff;color:#000;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">KV</div>
+                <div class="deploy-option-name">Puter KV</div>
+              </div>
+              <div class="deploy-option" data-target="file" data-testid="deploy-file">
+                <div class="deploy-option-icon" style="background:#00ff88;color:#000;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">FS</div>
+                <div class="deploy-option-name">Save File</div>
+              </div>
+              <div class="deploy-option" data-target="api" data-testid="deploy-api">
+                <div class="deploy-option-icon" style="background:#f97316;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">API</div>
+                <div class="deploy-option-name">API Endpoint</div>
+              </div>
+              <div class="deploy-option" data-target="hosting" data-testid="deploy-hosting">
+                <div class="deploy-option-icon" style="background:#3b82f6;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">WEB</div>
+                <div class="deploy-option-name">puter.site</div>
+              </div>
+              <div class="deploy-option" data-target="export" data-testid="deploy-export">
+                <div class="deploy-option-icon" style="background:#ec4899;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:12px;">EXP</div>
+                <div class="deploy-option-name">Export</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Panel: Communication -->
+    <div class="panel comm-panel">
+      <div class="panel-header">
+        <span class="panel-header-icon">*</span>
+        Agent Communication
+        <button class="quick-action-btn" style="margin-left: auto; padding: 4px 8px;" onclick="openGrudChat()" data-testid="btn-open-grudchat">
+          GrudChat
+        </button>
+      </div>
+      <div class="panel-content">
+        <div class="message-feed" id="messageFeed"></div>
+      </div>
+      <div class="input-area">
+        <div class="input-row">
+          <input type="text" id="taskInput" placeholder="Send task to agent..." data-testid="input-task">
+          <button class="send-btn" id="sendBtn" data-testid="button-send">Send</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Window Container for floating windows -->
+    <div class="window-container" id="windowContainer"></div>
+    
+    <!-- Taskbar for minimized windows -->
+    <div class="taskbar" id="taskbar"></div>
+  </div>
+  
+  <!-- Quick Actions Bar (fixed at bottom of VM panel) -->
+  <div class="quick-actions" id="quickActions" style="position: fixed; bottom: 56px; left: 292px; right: 316px; z-index: 999;">
+    <button class="quick-action-btn" onclick="openLivePreview()" data-testid="btn-live-preview">
+      Live Preview
+    </button>
+    <button class="quick-action-btn" onclick="openCodeEditor()" data-testid="btn-code-editor">
+      Code Editor
+    </button>
+    <button class="quick-action-btn" onclick="openGameIterator()" data-testid="btn-game-iterator">
+      Game Lab
+    </button>
+    <button class="quick-action-btn" onclick="openAIVM()" data-testid="btn-ai-vm">
+      AI VM
+    </button>
+    <button class="quick-action-btn" onclick="openNestedDesktop()" data-testid="btn-nested-desktop">
+      Desktop
+    </button>
+    <button class="quick-action-btn" onclick="tileAllScreens()" data-testid="btn-tile-screens">
+      Tile
+    </button>
+    <button class="quick-action-btn primary" onclick="runCode()" data-testid="btn-run-code">
+      Run
+    </button>
+  </div>
+
+  <script>
+    // Agent definitions
+    const avatarPath = '/grudgeos/assets/agents/';
+    const agents = {
+      orchestrator: { id: 'orchestrator', name: 'Orchestrator', icon: avatarPath + 'agent-purple.png', role: 'Task Coordinator', model: 'claude-sonnet-4', status: 'online', type: 'core' },
+      coder: { id: 'coder', name: 'Code Agent', icon: avatarPath + 'agent-green.png', role: 'Code Generation', model: 'claude-sonnet-4', status: 'online', type: 'core' },
+      artist: { id: 'artist', name: 'Art Agent', icon: avatarPath + 'agent-blue.png', role: 'Visual Design', model: 'gpt-4o', status: 'online', type: 'core' },
+      analyst: { id: 'analyst', name: 'Analyst', icon: avatarPath + 'agent-orange.png', role: 'Data Analysis', model: 'gemini-2.0-flash', status: 'online', type: 'core' }
+    };
+    
+    const specialistAgents = {
+      lua: { id: 'lua', name: 'Lua Agent', icon: avatarPath + 'agent-red.png', role: 'Lua Scripting', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' },
+      rust: { id: 'rust', name: 'Rust Agent', icon: avatarPath + 'agent-orange.png', role: 'Systems Programming', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' },
+      threejs: { id: 'threejs', name: 'Three.js Agent', icon: avatarPath + 'agent-blue.png', role: '3D Graphics', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' },
+      phaser: { id: 'phaser', name: 'Phaser Agent', icon: avatarPath + 'agent-green.png', role: '2D Game Engine', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' },
+      colyseus: { id: 'colyseus', name: 'Colyseus Agent', icon: avatarPath + 'agent-purple.png', role: 'Multiplayer Networking', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' },
+      networking: { id: 'networking', name: 'Network Agent', icon: avatarPath + 'agent-red.png', role: 'WebSocket/P2P', model: 'claude-sonnet-4', status: 'offline', type: 'specialist' }
+    };
+    
+    let selectedAgent = null;
+    let currentView = 'terminal';
+    let messages = [];
+    let puterReady = false;
+    let puterCapabilities = { ai: false, kv: false, fs: false, auth: false };
+    
+    // Initialize Puter
+    function updateConnectionStatus(status, color) {
+      const el = document.getElementById('connection-status');
+      if (el) {
+        el.textContent = status;
+        el.style.color = color;
+      }
+    }
+    
+    async function initPuter() {
+      if (typeof puter === 'undefined') {
+        addMessage('system', 'Running in local mode (Puter SDK not available)', 'system');
+        updateConnectionStatus('* Local Mode', 'var(--neon-orange)');
+        setTimeout(updateInfrastructureStatus, 100);
+        return;
+      }
+      try {
+        // Detect available capabilities
+        puterCapabilities.auth = !!(puter.auth && typeof puter.auth.signIn === 'function');
+        puterCapabilities.ai = !!(puter.ai && typeof puter.ai.chat === 'function');
+        puterCapabilities.kv = !!(puter.kv && typeof puter.kv.set === 'function');
+        puterCapabilities.fs = !!(puter.fs && typeof puter.fs.write === 'function');
+        
+        // Attempt auth if available
+        if (puterCapabilities.auth) {
+          await puter.auth.signIn();
+        }
+        
+        const availableServices = Object.entries(puterCapabilities)
+          .filter(([k, v]) => v)
+          .map(([k]) => k.toUpperCase())
+          .join(', ');
+        
+        // Only set puterReady if we have at least one capability
+        puterReady = Object.values(puterCapabilities).some(v => v);
+        
+        if (availableServices) {
+          addMessage('system', `Connected to Puter: ${availableServices}`, 'success');
+          updateConnectionStatus('* ' + availableServices, 'var(--neon-green)');
+        } else {
+          addMessage('system', 'Puter SDK loaded but no services available', 'system');
+          updateConnectionStatus('* Limited', 'var(--neon-orange)');
+        }
+        
+        // Update infrastructure status
+        setTimeout(updateInfrastructureStatus, 100);
+      } catch (e) {
+        addMessage('system', 'Running in local mode', 'system');
+        updateConnectionStatus('* Local Mode', 'var(--neon-orange)');
+        setTimeout(updateInfrastructureStatus, 100);
+      }
+    }
+    
+    // Render agents list
+    function renderAgents() {
+      const list = document.getElementById('agentList');
+      
+      const coreHtml = Object.values(agents).map(agent => `
+        <div class="agent-card ${selectedAgent === agent.id ? 'selected' : ''} ${agent.status === 'working' ? 'active' : ''}" 
+             data-id="${agent.id}" data-testid="agent-${agent.id}">
+          <div class="agent-header">
+            <div class="agent-avatar"><img src="${agent.icon}" alt="${agent.name}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;"></div>
+            <div class="agent-info">
+              <div class="agent-name">${agent.name}</div>
+              <div class="agent-role">${agent.role}</div>
+            </div>
+            <span class="agent-status ${agent.status}">${agent.status}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      const specialistHtml = Object.values(specialistAgents).map(agent => `
+        <div class="agent-card ${selectedAgent === agent.id ? 'selected' : ''}" 
+             data-id="${agent.id}" data-testid="agent-${agent.id}">
+          <div class="agent-header">
+            <div class="agent-avatar"><img src="${agent.icon}" alt="${agent.name}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;filter:hue-rotate(30deg);"></div>
+            <div class="agent-info">
+              <div class="agent-name">${agent.name}</div>
+              <div class="agent-role">${agent.role}</div>
+            </div>
+            <span class="agent-status ${agent.status}">${agent.status}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      list.innerHTML = coreHtml + `
+        <div class="section-divider">Specialists</div>
+        ${specialistHtml}
+      `;
+      
+      // Add click handlers
+      list.querySelectorAll('.agent-card').forEach(card => {
+        card.addEventListener('click', () => selectAgent(card.dataset.id));
+      });
+    }
+    
+    // Select agent
+    function selectAgent(agentId) {
+      selectedAgent = agentId;
+      const agent = agents[agentId] || specialistAgents[agentId];
+      
+      // Wake up specialist if dormant
+      if (specialistAgents[agentId] && specialistAgents[agentId].status === 'offline') {
+        specialistAgents[agentId].status = 'online';
+        addMessage(agentId, `${agent.name} activated and ready`, 'success');
+      }
+      
+      renderAgents();
+      addMessage('system', `Selected ${agent.name} for task execution`, 'system');
+    }
+    
+    // View switching
+    function switchView(view) {
+      currentView = view;
+      
+      document.querySelectorAll('.vm-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === view);
+      });
+      
+      // Hide all views
+      ['terminal-view', 'files-view', 'ai-cmd-view', 'deploy-view', 'infrastructure-view', 'bestpractices-view', 'editor-view'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      
+      // Show selected view
+      const viewEl = document.getElementById(view + '-view');
+      if (viewEl) viewEl.classList.remove('hidden');
+    }
+    
+    // ===== TERMINAL FUNCTIONS =====
+    function clearTerminal() {
+      document.getElementById('terminalOutput').innerHTML = `<span style="color:var(--neon-cyan);">Terminal cleared</span><span style="color:var(--text-secondary);">Ready&gt;</span>`;
+    }
+    
+    function appendTerminalLine(text, color = 'var(--text)') {
+      const output = document.getElementById('terminalOutput');
+      const line = document.createElement('span');
+      line.style.color = color;
+      line.textContent = text;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    function runQuickCmd(cmd) {
+      document.getElementById('terminalInput').value = cmd;
+      executeTerminal();
+    }
+    
+    async function executeTerminal() {
+      const input = document.getElementById('terminalInput');
+      const code = input.value.trim();
+      if (!code) return;
+      
+      appendTerminalLine('> ' + code, 'var(--neon-green)');
+      input.value = '';
+      
+      // Handle special commands
+      if (code === 'help') {
+        appendTerminalLine('CloudPilot QuickJS Sandbox Commands:', 'var(--neon-cyan)');
+        appendTerminalLine('  help          - Show this help');
+        appendTerminalLine('  clear         - Clear terminal');
+        appendTerminalLine('  puter.*       - Puter.js API calls');
+        appendTerminalLine('  Any JavaScript code will be executed securely');
+        return;
+      }
+      
+      if (code === 'clear') {
+        clearTerminal();
+        return;
+      }
+      
+      // Execute via secure QuickJS sandbox on server
+      try {
+        appendTerminalLine('Executing...', 'var(--text-secondary)');
+        const response = await fetch('/api/v1/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language: 'javascript' })
+        });
+        const data = await response.json();
+        
+        if (data.success && data.result) {
+          const r = data.result;
+          // Show any console logs
+          if (r.logs && r.logs.length > 0) {
+            r.logs.forEach(log => appendTerminalLine('[log] ' + log, 'var(--text-secondary)'));
+          }
+          // Show result or error
+          if (r.status === 'success') {
+            appendTerminalLine('Result: ' + JSON.stringify(r.output, null, 2), 'var(--neon-green)');
+          } else {
+            appendTerminalLine('Error: ' + (r.error || 'Unknown error'), 'var(--neon-pink)');
+          }
+          appendTerminalLine('Execution time: ' + r.executionTime + 'ms', 'var(--text-muted)');
+        } else {
+          appendTerminalLine('Error: ' + (data.error || 'Execution failed'), 'var(--neon-pink)');
+        }
+      } catch (e) {
+        appendTerminalLine('Execution error: ' + e.message, 'var(--neon-pink)');
+      }
+    }
+    
+    // Terminal input enter key
+    document.addEventListener('DOMContentLoaded', () => {
+      const termInput = document.getElementById('terminalInput');
+      if (termInput) {
+        termInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') executeTerminal();
+        });
+      }
+    });
+    
+    // ===== FILES FUNCTIONS =====
+    let currentFilePath = '/';
+    
+    async function refreshFiles() {
+      const filesList = document.getElementById('filesList');
+      currentFilePath = document.getElementById('currentPath').value || '/';
+      
+      if (typeof puter !== 'undefined' && puter.fs) {
+        try {
+          const files = await puter.fs.readdir(currentFilePath);
+          filesList.innerHTML = files.map(f => `
+            <div class="file-item ${f.is_dir ? 'folder' : 'file'}" onclick="${f.is_dir ? `navigateTo('${currentFilePath}/${f.name}')` : `openFile('${currentFilePath}/${f.name}')`}">
+              <span class="file-icon" style="background:${f.is_dir ? '#8b5cf6' : '#00ff88'};">${f.is_dir ? 'DIR' : f.name.split('.').pop().toUpperCase().slice(0,4)}</span>
+              <span class="file-name">${f.name}${f.is_dir ? '/' : ''}</span>
+            </div>
+          `).join('');
+        } catch (e) {
+          filesList.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">Error loading files: ' + e.message + '</div>';
+        }
+      } else {
+        filesList.innerHTML = '<div style="padding:20px;color:var(--text-secondary);">Puter FS not available. Connect to Puter to browse files.</div>';
+      }
+    }
+    
+    function navigateTo(path) {
+      document.getElementById('currentPath').value = path.replace(/\/+/g, '/');
+      refreshFiles();
+    }
+    
+    function navigateUp() {
+      const parts = currentFilePath.split('/').filter(Boolean);
+      parts.pop();
+      navigateTo('/' + parts.join('/'));
+    }
+    
+    async function openFile(path) {
+      const preview = document.getElementById('filePreview');
+      if (typeof puter !== 'undefined' && puter.fs) {
+        try {
+          const content = await puter.fs.read(path);
+          preview.innerHTML = '<pre style="margin:0;font-size:12px;color:var(--text);white-space:pre-wrap;">' + 
+            (typeof content === 'string' ? content : JSON.stringify(content, null, 2)) + '</pre>';
+        } catch (e) {
+          preview.innerHTML = '<div style="color:var(--neon-pink);">Error: ' + e.message + '</div>';
+        }
+      }
+    }
+    
+    function showNewFileDialog() {
+      const name = prompt('Enter file/folder name:');
+      if (name) {
+        addMessage('system', 'Creating: ' + currentFilePath + '/' + name);
+      }
+    }
+    
+    // ===== AI COMMAND FUNCTIONS =====
+    async function sendAICommand(mode) {
+      const input = document.getElementById('aiInput');
+      const prompt = input.value.trim();
+      if (!prompt) return;
+      
+      const chatArea = document.getElementById('aiChatArea');
+      const model = document.getElementById('aiModel').value;
+      
+      // Add user message
+      chatArea.innerHTML += `
+        <div class="ai-message user">
+          <img src="/grudgeos/assets/agents/user.png" class="ai-avatar" onerror="this.src='/grudgeos/assets/agents/agent-green.png'">
+          <div class="ai-content"><strong>You</strong><p>${prompt}</p></div>
+        </div>
+      `;
+      input.value = '';
+      
+      // Add thinking indicator
+      const thinkingId = 'thinking-' + Date.now();
+      chatArea.innerHTML += `<div id="${thinkingId}" class="ai-message"><img src="/grudgeos/assets/agents/cloudpilot.png" class="ai-avatar"><div class="ai-content"><strong>CloudPilot</strong><p style="color:var(--text-secondary);">Thinking...</p></div></div>`;
+      chatArea.scrollTop = chatArea.scrollHeight;
+      
+      // Build system prompt based on mode
+      let systemPrompt = 'You are CloudPilot, an autonomous AI development assistant. ';
+      if (mode === 'code') systemPrompt += 'Generate clean, working code. Use Puter.js APIs (puter.ai, puter.kv, puter.fs) - they are FREE with no API keys needed.';
+      else if (mode === 'execute') systemPrompt += 'Generate code that can be executed immediately. Wrap in executable functions. Use Puter.js APIs.';
+      else systemPrompt += 'Explain clearly and concisely.';
+      
+      try {
+        let response;
+        if (typeof puter !== 'undefined' && puter.ai) {
+          response = await puter.ai.chat(systemPrompt + '\n\nUser request: ' + prompt, { model });
+        } else {
+          response = 'Puter AI not available. Please ensure you are running in the Puter environment for free AI access.';
+        }
+        
+        const thinkingEl = document.getElementById(thinkingId);
+        if (thinkingEl) {
+          thinkingEl.querySelector('.ai-content').innerHTML = `<strong>CloudPilot</strong><div style="white-space:pre-wrap;">${filterApiKeySuggestions(response)}</div>`;
+        }
+        
+        // If execute mode, try to run the code
+        if (mode === 'execute' && response.includes('```')) {
+          const codeMatch = response.match(/```(?:javascript|js)?\n?([\s\S]*?)```/);
+          if (codeMatch) {
+            addMessage('system', 'Executing generated code...', 'system');
+            document.getElementById('deployCode').value = codeMatch[1];
+            switchView('terminal');
+            document.getElementById('terminalInput').value = codeMatch[1].split('\n')[0];
+          }
+        }
+      } catch (e) {
+        const thinkingEl = document.getElementById(thinkingId);
+        if (thinkingEl) {
+          thinkingEl.querySelector('.ai-content').innerHTML = `<strong>CloudPilot</strong><p style="color:var(--neon-pink);">Error: ${e.message}</p>`;
+        }
+      }
+      
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    // ===== DEPLOY FUNCTIONS =====
+    async function deployTo(target) {
+      addMessage('system', 'Deploying to ' + target + '...', 'system');
+      
+      if (target === 'puter-site') {
+        const code = document.getElementById('deployCode').value;
+        const siteName = document.getElementById('deploySiteName').value || 'my-app';
+        
+        if (!code.trim()) {
+          addMessage('system', 'Please enter code to deploy', 'error');
+          return;
+        }
+        
+        if (typeof puter !== 'undefined' && puter.hosting) {
+          try {
+            const result = await puter.hosting.create(siteName, code);
+            addMessage('system', 'Deployed to: ' + result.url, 'success');
+            updateDeploymentsList(result.url);
+          } catch (e) {
+            addMessage('system', 'Deploy error: ' + e.message, 'error');
+          }
+        } else {
+          addMessage('system', 'Puter hosting not available', 'error');
+        }
+      } else if (target === 'puter-kv') {
+        addMessage('system', 'Saving to Puter KV...', 'system');
+      } else if (target === 'puter-fs') {
+        addMessage('system', 'Saving to Puter FS...', 'system');
+      }
+    }
+    
+    function deployNow() {
+      deployTo('puter-site');
+    }
+    
+    function updateDeploymentsList(url) {
+      const list = document.getElementById('deploymentsList');
+      const item = document.createElement('div');
+      item.className = 'deployment-item';
+      item.innerHTML = `
+        <span class="deployment-status active"></span>
+        <span class="deployment-name">${url}</span>
+        <span class="deployment-date">Just now</span>
+      `;
+      list.prepend(item);
+    }
+    
+    // Add message to feed
+    function addMessage(sender, content, type = '') {
+      const agent = agents[sender] || specialistAgents[sender] || { name: 'System', icon: avatarPath + 'agent-purple.png' };
+      const msgEl = document.createElement('div');
+      msgEl.className = `message ${type}`;
+      msgEl.innerHTML = `
+        <div class="message-header">
+          <img src="${agent.icon}" alt="${agent.name}" style="width:20px;height:20px;border-radius:4px;object-fit:cover;">
+          <span class="message-sender">${agent.name}</span>
+          <span class="message-time">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="message-content">${content}</div>
+      `;
+      
+      document.getElementById('messageFeed').appendChild(msgEl);
+      msgEl.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Filter out API key suggestions from AI responses
+    function filterApiKeySuggestions(text) {
+      if (typeof text !== 'string') return text;
+      
+      const patterns = [
+        /export\s+\w*API_KEY\s*=\s*["'][^"']*["']/gi,
+        /OPENAI_API_KEY/gi,
+        /your-openai-key/gi,
+        /sk-[a-zA-Z0-9]{20,}/g,
+        /you\s+(will\s+)?need\s+(an?\s+)?api\s+key/gi,
+        /get\s+your\s+api\s+key/gi,
+        /sign\s+up\s+for\s+an?\s+api\s+key/gi
+      ];
+      
+      let filtered = text;
+      let wasFiltered = false;
+      
+      patterns.forEach(pattern => {
+        if (pattern.test(filtered)) {
+          wasFiltered = true;
+          filtered = filtered.replace(pattern, '[FREE via puter.ai]');
+        }
+      });
+      
+      if (wasFiltered) {
+        filtered += '\n\n> Note: GrudgeOS uses Puter.js for FREE AI - no API keys required! Use puter.ai.chat() instead.';
+      }
+      
+      return filtered;
+    }
+    
+    // Send task to agent
+    async function sendTask(task) {
+      if (!task.trim()) return;
+      if (!selectedAgent) {
+        addMessage('system', 'Please select an agent first', 'error');
+        return;
+      }
+      
+      const agent = agents[selectedAgent] || specialistAgents[selectedAgent];
+      agent.status = 'working';
+      renderAgents();
+      
+      addMessage('system', `Task sent to ${agent.name}: "${task}"`, 'system');
+      
+      // Show thinking indicator
+      const thinkingEl = document.createElement('div');
+      thinkingEl.className = 'message';
+      thinkingEl.innerHTML = `
+        <div class="message-header">
+          <span>${agent.icon}</span>
+          <span class="message-sender">${agent.name}</span>
+        </div>
+        <div class="thinking"><span></span><span></span><span></span></div>
+      `;
+      document.getElementById('messageFeed').appendChild(thinkingEl);
+      
+      try {
+        // Use Puter AI if available - FREE, NO API KEYS NEEDED
+        let response;
+        if (puterReady && puterCapabilities.ai) {
+          const systemPrompt = `You are ${agent.name}, a ${agent.role} agent in GrudgeOS.
+
+CRITICAL RULES:
+1. GrudgeOS uses Puter.js which provides FREE UNLIMITED AI access
+2. NEVER suggest API keys, environment variables, or "export OPENAI_API_KEY"
+3. NEVER mention needing to pay for AI or get API keys
+4. Always use puter.ai.chat() for AI operations - it's FREE
+5. Use puter.kv for storage, puter.fs for files, puter.hosting for deployment
+
+Be helpful and concise.`;
+          
+          response = await puter.ai.chat([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: task }
+          ], { model: agent.model || 'gpt-4o' });
+        } else {
+          // Simulate response
+          await new Promise(r => setTimeout(r, 1500));
+          response = `[${agent.name}] Task analysis complete. Ready for deployment.`;
+        }
+        
+        thinkingEl.remove();
+        
+        // Filter out API key suggestions and get content
+        let content = typeof response === 'string' ? response : (response.message?.content || response.message || JSON.stringify(response));
+        content = filterApiKeySuggestions(content);
+        
+        addMessage(selectedAgent, content);
+        
+        // Update editor with response
+        document.getElementById('responseEditor').value = content;
+        switchView('editor');
+        
+      } catch (e) {
+        thinkingEl.remove();
+        addMessage('system', `Error: ${e.message}`, 'error');
+      }
+      
+      agent.status = 'online';
+      renderAgents();
+    }
+    
+    // Deploy internally
+    async function deployInternal() {
+      const content = document.getElementById('responseEditor').value;
+      if (!content.trim()) {
+        addMessage('system', 'No content to deploy', 'error');
+        return;
+      }
+      
+      addMessage('system', 'Deploying internally...', 'system');
+      
+      try {
+        if (puterReady && puterCapabilities.kv) {
+          // Save to Puter KV
+          const key = `deploy_${Date.now()}`;
+          await puter.kv.set(key, content);
+          addMessage('system', `Deployed to Puter KV: ${key}`, 'success');
+        } else {
+          // Store in memory for local mode
+          window.localDeploys = window.localDeploys || [];
+          window.localDeploys.push({ content, timestamp: Date.now() });
+          addMessage('system', 'Deployed to local memory (Puter KV not available)', 'success');
+        }
+        
+        // Notify parent window
+        window.parent.postMessage({ type: 'ai_deploy', content, timestamp: Date.now() }, '*');
+        
+      } catch (e) {
+        addMessage('system', `Deploy error: ${e.message}`, 'error');
+      }
+    }
+    
+    // Deploy option selection
+    let selectedDeployTarget = 'internal';
+    
+    function selectDeployOption(target) {
+      selectedDeployTarget = target;
+      document.querySelectorAll('.deploy-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.target === target);
+      });
+    }
+    
+    // Deploy based on selected target
+    async function deployToTarget() {
+      const content = document.getElementById('responseEditor').value;
+      if (!content.trim()) {
+        addMessage('system', 'No content to deploy', 'error');
+        return;
+      }
+      
+      const target = selectedDeployTarget;
+      addMessage('system', `Deploying to ${target}...`, 'system');
+      
+      try {
+        switch (target) {
+          case 'internal':
+            window.localDeploys = window.localDeploys || [];
+            window.localDeploys.push({ content, timestamp: Date.now() });
+            addMessage('system', 'Deployed to internal memory', 'success');
+            break;
+            
+          case 'puter':
+            if (puterCapabilities.kv) {
+              const key = `deploy_${Date.now()}`;
+              await puter.kv.set(key, content);
+              addMessage('system', `Saved to Puter KV: ${key}`, 'success');
+            } else {
+              addMessage('system', 'Puter KV not available - using local storage', 'error');
+              localStorage.setItem(`deploy_${Date.now()}`, content);
+            }
+            break;
+            
+          case 'file':
+            if (puterCapabilities.fs) {
+              const filename = `deploy_${Date.now()}.txt`;
+              await puter.fs.write(filename, content);
+              addMessage('system', `Saved to Puter file: ${filename}`, 'success');
+            } else {
+              // Download as file
+              const blob = new Blob([content], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `deploy_${Date.now()}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+              addMessage('system', 'Downloaded as file', 'success');
+            }
+            break;
+            
+          case 'api':
+            addMessage('system', 'API endpoint deployment requires configuration', 'system');
+            break;
+            
+          case 'hosting':
+            if (typeof puter !== 'undefined' && puter.hosting) {
+              addMessage('system', 'Deploying to puter.site...', 'system');
+              try {
+                const appName = 'grudgeos-aivm-' + Date.now();
+                await puter.hosting.create(appName, content);
+                addMessage('system', `Deployed to ${appName}.puter.site`, 'success');
+              } catch (e) {
+                addMessage('system', `Hosting error: ${e.message}`, 'error');
+              }
+            } else {
+              addMessage('system', 'Puter hosting not available - open AI VM to deploy', 'system');
+              openAIVM();
+            }
+            break;
+            
+          case 'export':
+            navigator.clipboard.writeText(content);
+            addMessage('system', 'Exported to clipboard', 'success');
+            break;
+            
+          default:
+            addMessage('system', 'Unknown deployment target', 'error');
+        }
+        
+        // Notify parent window
+        window.parent.postMessage({ type: 'ai_deploy', content, target, timestamp: Date.now() }, '*');
+        
+      } catch (e) {
+        addMessage('system', `Deploy error: ${e.message}`, 'error');
+      }
+    }
+    
+    // Update infrastructure status based on Puter capabilities
+    function updateInfrastructureStatus() {
+      const infraStatus = {
+        vpn: { active: true, status: 'Connected' },
+        server: { active: true, status: 'Running' },
+        storage: { active: puterCapabilities.fs || puterCapabilities.kv, status: puterCapabilities.kv ? 'Puter KV' : 'Local' },
+        database: { active: puterCapabilities.kv, status: puterCapabilities.kv ? 'KV Ready' : 'Standby' },
+        api: { active: puterCapabilities.ai, status: puterCapabilities.ai ? 'AI Ready' : 'Limited' },
+        cdn: { active: false, status: 'Disabled' },
+        auth: { active: puterCapabilities.auth, status: puterCapabilities.auth ? 'Puter Auth' : 'Local' },
+        monitor: { active: true, status: 'Active' }
+      };
+      
+      document.querySelectorAll('.infra-card').forEach(card => {
+        const type = card.dataset.type;
+        if (infraStatus[type]) {
+          const info = infraStatus[type];
+          card.classList.toggle('active', info.active);
+          const statusEl = card.querySelector('.infra-status');
+          statusEl.textContent = info.status;
+          statusEl.className = 'infra-status' + (info.active ? '' : ' offline');
+        }
+      });
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAgents();
+      initPuter();
+      
+      // Initialize default view (terminal)
+      switchView('terminal');
+      
+      // View tabs
+      document.querySelectorAll('.vm-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchView(tab.dataset.view));
+      });
+      
+      // Deploy options
+      document.querySelectorAll('.deploy-option').forEach(opt => {
+        opt.addEventListener('click', () => selectDeployOption(opt.dataset.target));
+      });
+      
+      // Send button
+      document.getElementById('sendBtn').addEventListener('click', () => {
+        const input = document.getElementById('taskInput');
+        sendTask(input.value);
+        input.value = '';
+      });
+      
+      // Enter key
+      document.getElementById('taskInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendTask(e.target.value);
+          e.target.value = '';
+        }
+      });
+      
+      // Deploy internal button - now uses deployToTarget for selected target
+      document.querySelector('[data-testid="btn-deploy-internal"]').addEventListener('click', deployToTarget);
+      
+      // Copy button
+      document.querySelector('[data-testid="btn-copy"]').addEventListener('click', () => {
+        const content = document.getElementById('responseEditor').value;
+        navigator.clipboard.writeText(content);
+        addMessage('system', 'Copied to clipboard', 'success');
+      });
+      
+      // Clear button
+      document.querySelector('[data-testid="btn-clear"]').addEventListener('click', () => {
+        document.getElementById('responseEditor').value = '';
+        addMessage('system', 'Editor cleared', 'system');
+      });
+      
+      // Infrastructure cards
+      document.querySelectorAll('.infra-card').forEach(card => {
+        card.addEventListener('click', () => {
+          card.classList.toggle('active');
+          const status = card.querySelector('.infra-status');
+          if (card.classList.contains('active')) {
+            status.textContent = 'Connected';
+            status.className = 'infra-status';
+          } else {
+            status.textContent = 'Disabled';
+            status.className = 'infra-status offline';
+          }
+        });
+      });
+      
+      // Quick command buttons
+      document.querySelectorAll('.quick-cmd[data-cmd]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          runQuickCmd(btn.dataset.cmd);
+        });
+      });
+      
+      // Initial message
+      addMessage('system', 'Agent Swarm Network initialized. Select an agent to begin.', 'system');
+      
+      // Initialize window manager
+      initWindowManager();
+      
+      // Initialize Monaco
+      initMonaco();
+    });
+    
+    // Window Manager
+    let windowManager = null;
+    let screenManager = null;
+    let windowCounter = 0;
+    let screenCounter = 0;
+    let monacoEditor = null;
+    let currentCode = '';
+    
+    function initWindowManager() {
+      const container = document.getElementById('windowContainer');
+      windowManager = new WindowManager(container, {
+        snapZones: true,
+        onWindowChange: (event, windowData) => {
+          updateTaskbar();
+          if (event === 'closed') {
+            addMessage('system', `Window closed: ${windowData.options.title}`, 'system');
+          }
+        }
+      });
+      
+      if (typeof ScreenInScreen !== 'undefined') {
+        screenManager = new ScreenInScreen(container, {
+          allowNesting: true,
+          maxNestingDepth: 3,
+          onScreenChange: (event, data) => {
+            if (event === 'closed') {
+              addMessage('system', `Screen closed: ${data.options?.title || 'Unknown'}`, 'system');
+            }
+          }
+        });
+        console.log('[AgentSwarm] Screen-in-Screen manager initialized');
+      }
+    }
+    
+    function openNestedDesktop() {
+      if (!screenManager) {
+        addMessage('system', 'Screen manager not available', 'error');
+        return;
+      }
+      
+      const id = 'desktop-' + (++screenCounter);
+      screenManager.createScreen(id, {
+        title: 'Nested Desktop',
+        icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+        x: 60 + (screenCounter * 40),
+        y: 40 + (screenCounter * 30),
+        width: 600,
+        height: 450,
+        enableWindowManager: true
+      });
+      
+      const nested = screenManager.getNestedWindowManager(id);
+      if (nested) {
+        nested.createWindow('welcome-' + id, {
+          title: 'Welcome',
+          x: 20,
+          y: 20,
+          width: 280,
+          height: 180,
+          content: `
+            <div style="padding: 12px; font-family: Rajdhani, sans-serif; color: #e8e8ff;">
+              <h3 style="color: #00ff88; margin: 0 0 8px;">Nested Desktop</h3>
+              <p style="font-size: 12px; color: #9090b0;">
+                This is a screen-in-screen virtual desktop. You can:
+              </p>
+              <ul style="font-size: 11px; color: #9090b0; margin: 8px 0; padding-left: 16px;">
+                <li>Create windows inside this screen</li>
+                <li>Drag, resize, minimize, maximize</li>
+                <li>Nest multiple levels deep</li>
+              </ul>
+            </div>
+          `
+        });
+      }
+      
+      addMessage('system', 'Nested desktop created with window manager', 'success');
+    }
+    
+    function tileAllScreens() {
+      if (screenManager) {
+        screenManager.tileScreens();
+        addMessage('system', 'Screens tiled', 'success');
+      }
+      if (windowManager) {
+        const wins = windowManager.getAllWindows();
+        const count = wins.length;
+        if (count === 0) return;
+        
+        const container = document.getElementById('windowContainer');
+        const cols = Math.ceil(Math.sqrt(count));
+        const rows = Math.ceil(count / cols);
+        const w = container.clientWidth / cols;
+        const h = (container.clientHeight - 40) / rows;
+        
+        wins.forEach((win, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          win.state.x = col * w;
+          win.state.y = row * h;
+          win.state.width = w;
+          win.state.height = h;
+          win.element.style.transition = 'all 0.3s ease';
+          win.element.style.left = win.state.x + 'px';
+          win.element.style.top = win.state.y + 'px';
+          win.element.style.width = win.state.width + 'px';
+          win.element.style.height = win.state.height + 'px';
+          setTimeout(() => win.element.style.transition = '', 300);
+        });
+      }
+    }
+    
+    function updateTaskbar() {
+      const taskbar = document.getElementById('taskbar');
+      taskbar.innerHTML = '';
+      
+      windowManager.getAllWindows().forEach(win => {
+        if (win.state.minimized) {
+          const item = document.createElement('div');
+          item.className = 'taskbar-item';
+          item.textContent = win.options.title;
+          item.onclick = () => windowManager.restoreWindow(win.id);
+          taskbar.appendChild(item);
+        }
+      });
+    }
+    
+    // Monaco Editor initialization
+    function initMonaco() {
+      require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+    }
+    
+    function createMonacoEditor(container, code = '', language = 'javascript') {
+      return new Promise((resolve) => {
+        require(['vs/editor/editor.main'], function() {
+          const editor = monaco.editor.create(container, {
+            value: code,
+            language: language,
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 13,
+            fontFamily: 'JetBrains Mono, monospace',
+            scrollBeyondLastLine: false,
+            renderLineHighlight: 'line',
+            lineNumbers: 'on',
+            glyphMargin: false,
+            folding: true,
+            wordWrap: 'on'
+          });
+          resolve(editor);
+        });
+      });
+    }
+    
+    // Guard for uninitialized window manager
+    function ensureWindowManager() {
+      if (!windowManager) {
+        addMessage('system', 'Please wait - initializing...', 'error');
+        return false;
+      }
+      return true;
+    }
+    
+    // Open Live Preview window
+    function openLivePreview() {
+      if (!ensureWindowManager()) return;
+      const id = 'preview-' + (++windowCounter);
+      const previewContent = document.createElement('div');
+      previewContent.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column;';
+      
+      const toolbar = document.createElement('div');
+      toolbar.style.cssText = 'padding: 6px; border-bottom: 1px solid rgba(139, 92, 246, 0.3); display: flex; gap: 8px; background: rgba(0,0,0,0.3);';
+      toolbar.innerHTML = `
+        <button class="quick-action-btn" onclick="refreshPreview('${id}')">Refresh</button>
+        <input type="text" id="preview-url-${id}" placeholder="Enter HTML or URL..." style="flex:1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; color: var(--text); font-size: 11px;">
+        <button class="quick-action-btn primary" onclick="loadPreviewUrl('${id}')">Load</button>
+      `;
+      
+      const frame = document.createElement('iframe');
+      frame.id = 'preview-frame-' + id;
+      frame.className = 'live-preview-frame';
+      frame.sandbox = 'allow-scripts allow-same-origin allow-forms';
+      frame.srcdoc = '<html><body style="background:#1a1a2e;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;"><h2>Live Preview Ready</h2></body></html>';
+      
+      previewContent.append(toolbar, frame);
+      
+      windowManager.createWindow(id, {
+        title: 'Live Preview',
+        x: 100 + (windowCounter * 30),
+        y: 80 + (windowCounter * 20),
+        width: 500,
+        height: 400,
+        content: previewContent
+      });
+      
+      addMessage('system', 'Live Preview window opened', 'success');
+    }
+    
+    function refreshPreview(id) {
+      const frame = document.getElementById('preview-frame-' + id);
+      if (frame) {
+        const html = currentCode || document.getElementById('responseEditor').value;
+        if (html.trim().startsWith('<') || html.includes('<!DOCTYPE')) {
+          frame.srcdoc = html;
+        } else {
+          frame.srcdoc = `<html><head><style>body{background:#1a1a2e;color:#fff;font-family:sans-serif;padding:20px;}</style></head><body><pre>${html}</pre></body></html>`;
+        }
+      }
+    }
+    
+    function loadPreviewUrl(id) {
+      const input = document.getElementById('preview-url-' + id);
+      const frame = document.getElementById('preview-frame-' + id);
+      if (input && frame) {
+        const val = input.value.trim();
+        if (val.startsWith('http')) {
+          frame.src = val;
+        } else if (val.startsWith('<')) {
+          frame.srcdoc = val;
+        } else {
+          frame.srcdoc = `<html><body style="background:#1a1a2e;color:#fff;padding:20px;">${val}</body></html>`;
+        }
+      }
+    }
+    
+    // Open Code Editor window
+    async function openCodeEditor() {
+      if (!ensureWindowManager()) return;
+      const id = 'editor-' + (++windowCounter);
+      const editorContent = document.createElement('div');
+      editorContent.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column;';
+      
+      const toolbar = document.createElement('div');
+      toolbar.style.cssText = 'padding: 6px; border-bottom: 1px solid rgba(139, 92, 246, 0.3); display: flex; gap: 8px; background: rgba(0,0,0,0.3);';
+      toolbar.innerHTML = `
+        <select id="lang-${id}" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px; padding: 4px; color: var(--text);">
+          <option value="javascript">JavaScript</option>
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="typescript">TypeScript</option>
+          <option value="json">JSON</option>
+          <option value="lua">Lua</option>
+        </select>
+        <button class="quick-action-btn" onclick="runEditorCode('${id}')">Run</button>
+        <button class="quick-action-btn" onclick="saveEditorCode('${id}')">Save</button>
+        <button class="quick-action-btn primary" onclick="previewEditorCode('${id}')">Preview</button>
+      `;
+      
+      const monacoContainer = document.createElement('div');
+      monacoContainer.id = 'monaco-' + id;
+      monacoContainer.className = 'monaco-container';
+      monacoContainer.style.cssText = 'flex: 1;';
+      
+      editorContent.append(toolbar, monacoContainer);
+      
+      const win = windowManager.createWindow(id, {
+        title: 'Code Editor',
+        x: 150 + (windowCounter * 30),
+        y: 100 + (windowCounter * 20),
+        width: 600,
+        height: 450,
+        content: editorContent
+      });
+      
+      // Initialize Monaco in this container
+      setTimeout(async () => {
+        const code = document.getElementById('responseEditor').value || '// Start coding here\nconsole.log("Hello from GrudgeOS!");';
+        const editor = await createMonacoEditor(monacoContainer, code, 'javascript');
+        win.monacoEditor = editor;
+        
+        // Language selector
+        document.getElementById('lang-' + id).addEventListener('change', (e) => {
+          monaco.editor.setModelLanguage(editor.getModel(), e.target.value);
+        });
+      }, 100);
+      
+      addMessage('system', 'Code Editor window opened', 'success');
+    }
+    
+    function runEditorCode(id) {
+      const win = windowManager.getWindow(id);
+      if (win && win.monacoEditor) {
+        const code = win.monacoEditor.getValue();
+        currentCode = code;
+        try {
+          const result = eval(code);
+          addMessage('system', `Code executed. Result: ${result}`, 'success');
+        } catch (e) {
+          addMessage('system', `Execution error: ${e.message}`, 'error');
+        }
+      }
+    }
+    
+    function saveEditorCode(id) {
+      const win = windowManager.getWindow(id);
+      if (win && win.monacoEditor) {
+        const code = win.monacoEditor.getValue();
+        document.getElementById('responseEditor').value = code;
+        addMessage('system', 'Code saved to editor', 'success');
+      }
+    }
+    
+    function previewEditorCode(id) {
+      const win = windowManager.getWindow(id);
+      if (win && win.monacoEditor) {
+        currentCode = win.monacoEditor.getValue();
+        openLivePreview();
+        setTimeout(() => {
+          const previewId = 'preview-' + windowCounter;
+          refreshPreview(previewId);
+        }, 200);
+      }
+    }
+    
+    // Open Game Lab window
+    async function openGameIterator() {
+      if (!ensureWindowManager()) return;
+      const id = 'game-' + (++windowCounter);
+      const gameContent = document.createElement('div');
+      gameContent.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column;';
+      
+      const toolbar = document.createElement('div');
+      toolbar.style.cssText = 'padding: 6px; border-bottom: 1px solid rgba(139, 92, 246, 0.3); display: flex; gap: 8px; background: rgba(0,0,0,0.3); flex-wrap: wrap;';
+      toolbar.innerHTML = `
+        <button class="quick-action-btn" onclick="loadGameTemplate('${id}', 'pong')">Pong</button>
+        <button class="quick-action-btn" onclick="loadGameTemplate('${id}', 'snake')">Snake</button>
+        <button class="quick-action-btn" onclick="loadGameTemplate('${id}', 'breakout')">Breakout</button>
+        <button class="quick-action-btn primary" onclick="runGame('${id}')">Play</button>
+        <button class="quick-action-btn" onclick="editGame('${id}')">Edit Code</button>
+      `;
+      
+      const gameFrame = document.createElement('iframe');
+      gameFrame.id = 'game-frame-' + id;
+      gameFrame.className = 'live-preview-frame';
+      gameFrame.sandbox = 'allow-scripts allow-same-origin';
+      gameFrame.style.flex = '1';
+      gameFrame.srcdoc = getGameTemplate('menu');
+      
+      gameContent.append(toolbar, gameFrame);
+      
+      const win = windowManager.createWindow(id, {
+        title: 'Game Lab',
+        x: 200 + (windowCounter * 30),
+        y: 120 + (windowCounter * 20),
+        width: 550,
+        height: 500,
+        content: gameContent
+      });
+      
+      win.gameCode = getGameTemplate('pong');
+      
+      addMessage('system', 'Game Lab opened - iterate and create games!', 'success');
+    }
+    
+    function getGameTemplate(type) {
+      const templates = {
+        menu: `<!DOCTYPE html><html><body style="background:#1a1a2e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">
+          <h1 style="color:#00ff88;">Game Lab</h1>
+          <p>Select a template above or create your own!</p>
+          <p style="color:#8b5cf6;">AI-generated games can be iterated here</p>
+        </body></html>`,
+        pong: `<!DOCTYPE html><html><head><style>body{margin:0;background:#1a1a2e;display:flex;justify-content:center;align-items:center;height:100vh;}canvas{background:#0d0d1a;border:2px solid #00ff88;}</style></head><body>
+          <canvas id="game" width="400" height="300"></canvas>
+          <script>
+            const c=document.getElementById('game'),ctx=c.getContext('2d');
+            let py=130,by=150,bx=200,dx=3,dy=2,score=0;
+            document.onmousemove=e=>{py=e.clientY-c.offsetTop-30};
+            function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,400,300);
+              ctx.fillStyle='#00ff88';ctx.fillRect(10,py,10,60);ctx.fillRect(380,by,10,60);
+              ctx.beginPath();ctx.arc(bx,by+30,8,0,Math.PI*2);ctx.fill();
+              bx+=dx;by+=dy;
+              if(by<=0||by>=240)dy=-dy;
+              if(bx<=20&&by>py&&by<py+60){dx=-dx;score++}
+              if(bx>=370){by=150+(Math.random()-0.5)*100}
+              if(bx>=380&&by>by-30&&by<by+90)dx=-dx;
+              if(bx<=0||bx>=400){bx=200;by=150;dx=3}
+              ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.fillText('Score: '+score,170,20);
+              requestAnimationFrame(draw);
+            }draw();
+          <\/script></body></html>`,
+        snake: `<!DOCTYPE html><html><head><style>body{margin:0;background:#1a1a2e;display:flex;justify-content:center;align-items:center;height:100vh;}canvas{background:#0d0d1a;border:2px solid #8b5cf6;}</style></head><body>
+          <canvas id="game" width="400" height="400"></canvas>
+          <script>
+            const c=document.getElementById('game'),ctx=c.getContext('2d');
+            let snake=[{x:200,y:200}],dir={x:20,y:0},food={x:100,y:100},score=0;
+            document.onkeydown=e=>{
+              if(e.key==='ArrowUp'&&dir.y===0)dir={x:0,y:-20};
+              if(e.key==='ArrowDown'&&dir.y===0)dir={x:0,y:20};
+              if(e.key==='ArrowLeft'&&dir.x===0)dir={x:-20,y:0};
+              if(e.key==='ArrowRight'&&dir.x===0)dir={x:20,y:0};
+            };
+            setInterval(()=>{
+              const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+              if(head.x<0||head.x>=400||head.y<0||head.y>=400){snake=[{x:200,y:200}];score=0;return}
+              snake.unshift(head);
+              if(head.x===food.x&&head.y===food.y){score++;food={x:Math.floor(Math.random()*20)*20,y:Math.floor(Math.random()*20)*20}}
+              else snake.pop();
+              ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,400,400);
+              ctx.fillStyle='#8b5cf6';snake.forEach(s=>ctx.fillRect(s.x,s.y,18,18));
+              ctx.fillStyle='#ff00aa';ctx.fillRect(food.x,food.y,18,18);
+              ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.fillText('Score: '+score,10,20);
+            },100);
+          <\/script></body></html>`,
+        breakout: `<!DOCTYPE html><html><head><style>body{margin:0;background:#1a1a2e;display:flex;justify-content:center;align-items:center;height:100vh;}canvas{background:#0d0d1a;border:2px solid #00f5ff;}</style></head><body>
+          <canvas id="game" width="400" height="300"></canvas>
+          <script>
+            const c=document.getElementById('game'),ctx=c.getContext('2d');
+            let px=170,bx=200,by=280,dx=3,dy=-3,score=0;
+            let bricks=[];for(let i=0;i<8;i++)for(let j=0;j<4;j++)bricks.push({x:i*48+8,y:j*20+30,alive:true});
+            document.onmousemove=e=>{px=e.clientX-c.offsetLeft-30};
+            function draw(){ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,400,300);
+              ctx.fillStyle='#00f5ff';ctx.fillRect(px,285,60,10);
+              ctx.beginPath();ctx.arc(bx,by,6,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+              bx+=dx;by+=dy;
+              if(bx<=6||bx>=394)dx=-dx;if(by<=6)dy=-dy;
+              if(by>=279&&bx>px&&bx<px+60)dy=-dy;
+              if(by>300){bx=200;by=280;dx=3;dy=-3}
+              bricks.forEach(b=>{if(b.alive&&bx>b.x&&bx<b.x+44&&by>b.y&&by<b.y+16){b.alive=false;dy=-dy;score++}});
+              ctx.fillStyle='#ff6b35';bricks.filter(b=>b.alive).forEach(b=>ctx.fillRect(b.x,b.y,44,16));
+              ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.fillText('Score: '+score,10,20);
+              requestAnimationFrame(draw);
+            }draw();
+          <\/script></body></html>`
+      };
+      return templates[type] || templates.menu;
+    }
+    
+    function loadGameTemplate(id, type) {
+      const win = windowManager.getWindow(id);
+      const frame = document.getElementById('game-frame-' + id);
+      if (frame) {
+        const code = getGameTemplate(type);
+        frame.srcdoc = code;
+        if (win) win.gameCode = code;
+        addMessage('system', `Loaded ${type} template`, 'success');
+      }
+    }
+    
+    function runGame(id) {
+      const win = windowManager.getWindow(id);
+      const frame = document.getElementById('game-frame-' + id);
+      if (win && frame && win.gameCode) {
+        frame.srcdoc = win.gameCode;
+        addMessage('system', 'Game running!', 'success');
+      }
+    }
+    
+    function editGame(id) {
+      const win = windowManager.getWindow(id);
+      if (win && win.gameCode) {
+        document.getElementById('responseEditor').value = win.gameCode;
+        switchView('editor');
+        addMessage('system', 'Game code loaded in editor - modify and save!', 'success');
+      }
+    }
+    
+    // Open AI VM window
+    function openAIVM() {
+      if (!ensureWindowManager()) return;
+      const id = 'aivm-' + (++windowCounter);
+      
+      const aiVmLocation = '/grudgeos/index.html';
+      
+      windowManager.createWindow(id, {
+        title: 'AI VM - ' + aiVmLocation,
+        x: 80 + (windowCounter * 30),
+        y: 60 + (windowCounter * 20),
+        width: 700,
+        height: 500,
+        iframe: aiVmLocation,
+        sandbox: 'allow-scripts allow-same-origin allow-forms'
+      });
+      
+      addMessage('system', `AI VM opened from: ${aiVmLocation}`, 'success');
+      addMessage('system', 'Use puter.hosting to deploy AI VM apps to puter.site', 'system');
+    }
+    
+    // Deploy AI VM content
+    async function deployAIVM(content, appName) {
+      if (!content) {
+        addMessage('system', 'No content to deploy', 'error');
+        return;
+      }
+      
+      const name = appName || 'aivm-app-' + Date.now();
+      
+      if (typeof puter !== 'undefined' && puter.hosting) {
+        try {
+          addMessage('system', `Deploying ${name} to puter.site...`, 'system');
+          await puter.hosting.create(name, content);
+          const url = `https://${name}.puter.site`;
+          addMessage('system', `Deployed! URL: ${url}`, 'success');
+          
+          // Notify parent
+          window.parent.postMessage({ 
+            type: 'ai_vm_deployed', 
+            url, 
+            appName: name,
+            timestamp: Date.now() 
+          }, '*');
+          
+          return url;
+        } catch (e) {
+          addMessage('system', `Deploy error: ${e.message}`, 'error');
+        }
+      } else {
+        addMessage('system', 'Puter hosting not available in this context', 'error');
+        addMessage('system', 'Run in Puter environment for full deployment', 'system');
+      }
+    }
+    
+    // Open GrudChat window
+    function openGrudChat() {
+      if (!ensureWindowManager()) return;
+      const id = 'grudchat-' + (++windowCounter);
+      const chatContent = document.createElement('div');
+      chatContent.className = 'grudchat-panel';
+      chatContent.innerHTML = `
+        <div class="grudchat-header">
+          <span style="color: var(--neon-purple); font-weight: 600;">GrudChat</span>
+          <span style="font-size: 10px; color: var(--text-secondary);">Agent Swarm Channel</span>
+        </div>
+        <div class="grudchat-messages" id="grudchat-msgs-${id}">
+          <div style="padding: 8px; background: var(--bg-card); border-radius: 6px; margin-bottom: 8px;">
+            <div style="font-size: 11px; color: var(--neon-cyan); margin-bottom: 4px;">System</div>
+            <div style="font-size: 12px;">Connected to Agent Swarm channel. Messages sync with all agents.</div>
+          </div>
+        </div>
+        <div class="grudchat-input">
+          <input type="text" id="grudchat-input-${id}" placeholder="Send to GrudChat..." onkeypress="if(event.key==='Enter')sendGrudChat('${id}')">
+          <button class="quick-action-btn primary" onclick="sendGrudChat('${id}')">Send</button>
+        </div>
+      `;
+      
+      windowManager.createWindow(id, {
+        title: 'GrudChat',
+        x: 250 + (windowCounter * 30),
+        y: 80 + (windowCounter * 20),
+        width: 350,
+        height: 400,
+        content: chatContent
+      });
+      
+      addMessage('system', 'GrudChat window opened', 'success');
+    }
+    
+    function sendGrudChat(id) {
+      const input = document.getElementById('grudchat-input-' + id);
+      const msgs = document.getElementById('grudchat-msgs-' + id);
+      if (input && msgs && input.value.trim()) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding: 8px; background: rgba(139, 92, 246, 0.2); border-radius: 6px; margin-bottom: 8px;';
+        msg.innerHTML = `
+          <div style="font-size: 11px; color: var(--neon-green); margin-bottom: 4px;">You</div>
+          <div style="font-size: 12px;">${input.value}</div>
+        `;
+        msgs.appendChild(msg);
+        msgs.scrollTop = msgs.scrollHeight;
+        
+        // Broadcast to agents
+        addMessage('grudchat', input.value, 'system');
+        
+        // Post to parent for cross-window communication
+        window.parent.postMessage({ type: 'grudchat_msg', content: input.value, timestamp: Date.now() }, '*');
+        
+        input.value = '';
+      }
+    }
+    
+    // Run code from editor
+    function runCode() {
+      const code = document.getElementById('responseEditor').value;
+      if (!code.trim()) {
+        addMessage('system', 'No code to run', 'error');
+        return;
+      }
+      
+      currentCode = code;
+      
+      // Check if it's HTML
+      if (code.trim().startsWith('<') || code.includes('<!DOCTYPE')) {
+        openLivePreview();
+        setTimeout(() => {
+          const previewId = 'preview-' + windowCounter;
+          refreshPreview(previewId);
+        }, 200);
+      } else {
+        // Try to execute as JS
+        try {
+          const result = eval(code);
+          addMessage('system', `Executed. Result: ${result}`, 'success');
+        } catch (e) {
+          addMessage('system', `Error: ${e.message}`, 'error');
+        }
+      }
+    }
+    
+    // Listen for AI responses to spawn popup windows
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'ai_response_code') {
+        // AI generated code - offer to open in editor
+        const code = e.data.content;
+        document.getElementById('responseEditor').value = code;
+        addMessage('system', 'AI response received. Open in Code Editor or Live Preview?', 'success');
+      }
+      
+      if (e.data && e.data.type === 'spawn_window') {
+        const { windowType, content, title } = e.data;
+        if (windowType === 'preview') {
+          currentCode = content;
+          openLivePreview();
+          setTimeout(() => refreshPreview('preview-' + windowCounter), 200);
+        } else if (windowType === 'editor') {
+          openCodeEditor();
+        } else if (windowType === 'game') {
+          openGameIterator();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[project]
+name = "workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "parse-accept-language==0.1.2",
+    "parse-cmake==0.4.1",
+]

@@ -1,0 +1,42 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "parse-accept-language"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/e4/fe51dddc41d6a56cd5074f1611b8601b33fc7f2233a68b005377a6c487d4/parse-accept-language-0.1.2.tar.gz", hash = "sha256:32e23196bde766ba08c20d0cae47c2daf46c259806b15238efebe8dd3867118f", size = 2599, upload-time = "2017-09-04T14:56:14.797Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/66/e4c353b9fbd0bb9ac58b5e5f03e568f36c99f9a7f939c98747bafb12d515/parse_accept_language-0.1.2-py2.py3-none-any.whl", hash = "sha256:6708254304b09f1ea659a256ebd575f0f39310743d13b2c9b4a51e41a5047a49", size = 3590, upload-time = "2017-09-04T14:56:29.922Z" },
+]
+
+[[package]]
+name = "parse-cmake"
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pypeg2" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a7/8a/318a802a1053551673abdbacd62b0c67e71f52a7e8bdec8488638fbd36e0/parse_cmake-0.4.1.tar.gz", hash = "sha256:fcb3c2f2205008f8fcf856adcfc2cf67c1b7a34e1853b95b3c3b57e6cbdc02b2", size = 7476, upload-time = "2015-03-26T21:06:18.35Z" }
+
+[[package]]
+name = "pypeg2"
+version = "2.15.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/bd/10398e2c2d2070cc8a9c7153abfbd4ddb2895a2c52a32722ab8689e0cc7d/pyPEG2-2.15.2.tar.gz", hash = "sha256:2b2d4f80d8e1a9370b2a91f4a25f4abf7f69b85c8da84cd23ec36451958a1f6d", size = 40334, upload-time = "2015-10-07T19:27:49.747Z" }
+
+[[package]]
+name = "workspace"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "parse-accept-language" },
+    { name = "parse-cmake" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "parse-accept-language", specifier = "==0.1.2" },
+    { name = "parse-cmake", specifier = "==0.4.1" },
+]

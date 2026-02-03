@@ -1,0 +1,15 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.vercel
+
+# Large files - exclude from git
+*.zip
+attached_assets/
+*.bin
+public/grudgeos/models/
+.credentials.json
+*.exe

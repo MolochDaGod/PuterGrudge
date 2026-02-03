@@ -1,0 +1,11 @@
+Model Information:
+* title:	Map - Driving School 3D Highway Road
+* source:	https://sketchfab.com/3d-models/map-driving-school-3d-highway-road-29c87413ddcc45deb3aad4981f6ded24
+* author:	Villanueva-Jonatan-32621 (https://sketchfab.com/vj32621)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Map - Driving School 3D Highway Road" (https://sketchfab.com/3d-models/map-driving-school-3d-highway-road-29c87413ddcc45deb3aad4981f6ded24) by Villanueva-Jonatan-32621 (https://sketchfab.com/vj32621) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

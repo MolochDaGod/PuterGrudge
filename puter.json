@@ -1,0 +1,109 @@
+{
+  "name": "puter-monitor-ai",
+  "version": "2.0.0",
+  "description": "AI-powered monitoring dashboard with multi-worker architecture",
+  "type": "app",
+  "services": {
+    "web": {
+      "type": "web",
+      "runtime": "node20",
+      "entrypoint": "dist/index.cjs",
+      "build": "npm run build",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "5000"
+      },
+      "resources": {
+        "memory": "512MB",
+        "cpu": "1"
+      }
+    },
+    "arena": {
+      "type": "worker",
+      "runtime": "node20",
+      "entrypoint": "server/arena/index.ts",
+      "env": {
+        "NODE_ENV": "production",
+        "WORKER_TYPE": "arena"
+      },
+      "resources": {
+        "memory": "256MB",
+        "cpu": "0.5"
+      }
+    },
+    "ai-agent": {
+      "type": "worker",
+      "runtime": "node20",
+      "entrypoint": "server/services/ai-service.ts",
+      "env": {
+        "NODE_ENV": "production",
+        "WORKER_TYPE": "ai_agent"
+      },
+      "resources": {
+        "memory": "512MB",
+        "cpu": "1"
+      }
+    }
+  },
+  "storage": {
+    "kv": {
+      "enabled": true,
+      "namespaces": ["auth", "sessions", "monitoring", "arena"]
+    },
+    "postgres": {
+      "enabled": true,
+      "shared": true
+    }
+  },
+  "auth": {
+    "provider": "puter",
+    "integration": "grudge-auth",
+    "endpoints": {
+      "login": "/api/auth/login",
+      "logout": "/api/auth/logout",
+      "verify": "/api/auth/me"
+    }
+  },
+  "routes": {
+    "/": {
+      "service": "web"
+    },
+    "/api/v1/arena/*": {
+      "service": "arena",
+      "websocket": true
+    },
+    "/api/ai/*": {
+      "service": "ai-agent"
+    },
+    "/api/auth/*": {
+      "service": "web"
+    },
+    "/api/admin/*": {
+      "service": "web",
+      "auth": true
+    }
+  },
+  "networking": {
+    "internal": {
+      "enabled": true,
+      "services": ["web", "arena", "ai-agent"]
+    },
+    "websockets": {
+      "enabled": true,
+      "paths": ["/arena", "/api/v1/arena/*"]
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics": ["cpu", "memory", "requests", "websockets"],
+    "alerts": {
+      "memory_threshold": 90,
+      "cpu_threshold": 85
+    }
+  },
+  "deployment": {
+    "strategy": "rolling",
+    "healthcheck": "/api/health",
+    "timeout": 300
+  }
+}

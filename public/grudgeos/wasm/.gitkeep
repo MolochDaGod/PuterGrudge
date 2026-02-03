@@ -1,0 +1,2 @@
+# WebAssembly compiled modules will be placed here
+# Run the compile-wasm.sh script to generate the WASM files

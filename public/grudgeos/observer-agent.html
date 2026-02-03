@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observer Agent - GrudgeOS</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <link rel="stylesheet" href="styles/common.css">
+  <script src="lib/system-nav.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg-dark: #0a0a12;
+      --bg-panel: rgba(13, 13, 26, 0.95);
+      --bg-card: rgba(18, 18, 31, 0.95);
+      --neon-cyan: #00f5ff;
+      --neon-pink: #ff00aa;
+      --neon-purple: #8b5cf6;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --neon-yellow: #ffdd00;
+      --text: #e8e8ff;
+      --text-secondary: #9090b0;
+      --border: rgba(139, 92, 246, 0.3);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse at 10% 90%, rgba(0, 255, 136, 0.1) 0%, transparent 40%),
+        radial-gradient(ellipse at 90% 10%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+    
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .title-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .title-text {
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .status-row {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--neon-green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--neon-green);
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--neon-green); }
+      50% { opacity: 0.5; }
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+    
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+    
+    .activity-graph {
+      height: 200px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    
+    .graph-title {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .graph-canvas {
+      width: 100%;
+      height: 140px;
+      position: relative;
+    }
+    
+    .graph-bars {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 100%;
+      gap: 4px;
+    }
+    
+    .graph-bar {
+      flex: 1;
+      background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple));
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+      transition: height 0.5s ease;
+      position: relative;
+    }
+    
+    .graph-bar:hover {
+      opacity: 0.8;
+    }
+    
+    .graph-bar::after {
+      content: attr(data-value);
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .graph-bar:hover::after {
+      opacity: 1;
+    }
+    
+    .event-timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+    
+    .timeline-line {
+      position: absolute;
+      left: 6px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+    }
+    
+    .timeline-event {
+      position: relative;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--neon-cyan);
+    }
+    
+    .timeline-event::before {
+      content: '';
+      position: absolute;
+      left: -23px;
+      top: 16px;
+      width: 10px;
+      height: 10px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon-cyan);
+    }
+    
+    .timeline-event.action { border-left-color: var(--neon-green); }
+    .timeline-event.action::before { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+    .timeline-event.ai { border-left-color: var(--neon-purple); }
+    .timeline-event.ai::before { background: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
+    .timeline-event.error { border-left-color: var(--neon-pink); }
+    .timeline-event.error::before { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+    
+    .event-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    
+    .event-type {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      font-weight: 600;
+    }
+    
+    .event-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .event-content {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .event-position {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      font-family: monospace;
+    }
+    
+    .observer-notes {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .note-card {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .note-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .note-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .note-title {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .note-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+    
+    .note-content {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    
+    .note-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .note-tag {
+      font-size: 10px;
+      padding: 3px 8px;
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      color: var(--neon-purple);
+    }
+    
+    .metric-card {
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    
+    .metric-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      color: var(--neon-cyan);
+    }
+    
+    .metric-change {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    
+    .metric-change.up { color: var(--neon-green); }
+    .metric-change.down { color: var(--neon-pink); }
+    
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 3px;
+      margin-top: 10px;
+    }
+    
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      background: var(--bg-dark);
+      transition: all 0.3s;
+    }
+    
+    .heatmap-cell.level-1 { background: rgba(0, 245, 255, 0.2); }
+    .heatmap-cell.level-2 { background: rgba(0, 245, 255, 0.4); }
+    .heatmap-cell.level-3 { background: rgba(0, 245, 255, 0.6); }
+    .heatmap-cell.level-4 { background: rgba(0, 245, 255, 0.8); }
+    .heatmap-cell.level-5 { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
+    
+    .thinking-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(139, 92, 246, 0.1);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .thinking-dots span {
+      width: 6px;
+      height: 6px;
+      background: var(--neon-purple);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    
+    .thinking-text {
+      font-size: 12px;
+      color: var(--neon-purple);
+    }
+    
+    .input-area {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .input-row input {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+    }
+    
+    .input-row input:focus {
+      outline: none;
+      border-color: var(--neon-green);
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+      border: none;
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn:hover {
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+    
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--neon-purple); border-radius: 3px; }
+    
+    @media (max-width: 1200px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">
+        <div class="title-icon"><img src="/grudgeos/assets/icons/generated/observer.png" style="width:24px;height:24px;" alt="Observer"></div>
+        <span class="title-text">Observer Agent</span>
+      </div>
+      <div class="status-row">
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>Watching</span>
+        </div>
+        <div class="status-badge" style="border-color: var(--neon-purple); color: var(--neon-purple);">
+          <span id="eventCount">0</span> Events Logged
+        </div>
+      </div>
+    </header>
+    
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-header" style="color: var(--neon-cyan);">
+          <span>■</span> Activity Metrics
+        </div>
+        <div class="panel-content">
+          <div class="metric-card">
+            <div class="metric-label">Events Today</div>
+            <div class="metric-value" id="eventsToday">0</div>
+            <div class="metric-change up" id="eventsTrend">+0% from yesterday</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">AI Interactions</div>
+            <div class="metric-value" id="aiInteractions">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Session Duration</div>
+            <div class="metric-value" id="sessionDuration">0:00</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Activity Heatmap</div>
+            <div class="heatmap" id="heatmap"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header" style="color: var(--neon-green);">
+          <span>▲</span> Activity Graph & Timeline
+        </div>
+        <div class="panel-content">
+          <div class="activity-graph">
+            <div class="graph-title">Events Per Minute (Last 20 minutes)</div>
+            <div class="graph-canvas">
+              <div class="graph-bars" id="graphBars"></div>
+            </div>
+          </div>
+          
+          <div class="event-timeline" id="eventTimeline">
+            <div class="timeline-line"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header" style="color: var(--neon-purple);">
+          <span class="panel-icon" style="background: linear-gradient(135deg, #8b5cf6, #00f5ff); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold;">OB</span> Observer Notes
+        </div>
+        <div class="panel-content">
+          <div id="thinkingIndicator" class="thinking-indicator" style="display: none;">
+            <div class="thinking-dots"><span></span><span></span><span></span></div>
+            <span class="thinking-text">Analyzing activity patterns...</span>
+          </div>
+          <div class="observer-notes" id="observerNotes"></div>
+        </div>
+        <div class="input-area">
+          <div class="input-row">
+            <input type="text" id="queryInput" placeholder="Ask about activity patterns..." data-testid="input-query">
+            <button class="btn" id="queryBtn" data-testid="button-query">Ask</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ObserverAgent = {
+      events: [],
+      notes: [],
+      sessionStart: Date.now(),
+      graphData: new Array(20).fill(0),
+      heatmapData: new Array(24).fill(0),
+      aiInteractionCount: 0,
+      
+      async init() {
+        await this.loadFromStorage();
+        this.renderGraph();
+        this.renderHeatmap();
+        this.updateMetrics();
+        this.startWatching();
+        this.setupEventListeners();
+        
+        this.logEvent('system', 'Observer Agent initialized', { component: 'observer' });
+        
+        setTimeout(() => this.generateInsight(), 3000);
+        setInterval(() => this.updateSessionDuration(), 1000);
+        setInterval(() => this.saveToStorage(), 30000);
+      },
+      
+      async loadFromStorage() {
+        try {
+          const stored = await puter.kv.get('observer_events');
+          if (stored) {
+            const data = JSON.parse(stored);
+            this.events = data.events || [];
+            this.notes = data.notes || [];
+            this.graphData = data.graphData || new Array(20).fill(0);
+            this.heatmapData = data.heatmapData || new Array(24).fill(0);
+            this.renderEvents();
+            this.renderNotes();
+          }
+        } catch (e) {
+          console.log('Storage not available, using local state');
+        }
+      },
+      
+      async saveToStorage() {
+        try {
+          await puter.kv.set('observer_events', JSON.stringify({
+            events: this.events.slice(-100),
+            notes: this.notes.slice(-20),
+            graphData: this.graphData,
+            heatmapData: this.heatmapData,
+            lastSaved: new Date().toISOString()
+          }));
+        } catch (e) {}
+      },
+      
+      logEvent(type, content, metadata = {}) {
+        const event = {
+          id: Date.now(),
+          type,
+          content,
+          metadata,
+          timestamp: new Date().toISOString(),
+          position: metadata.position || null
+        };
+        
+        this.events.unshift(event);
+        if (this.events.length > 100) this.events.pop();
+        
+        const hour = new Date().getHours();
+        this.heatmapData[hour]++;
+        
+        this.graphData.shift();
+        this.graphData.push((this.graphData[this.graphData.length - 1] || 0) + 1);
+        
+        this.renderEvent(event);
+        this.updateMetrics();
+        this.renderGraph();
+        this.renderHeatmap();
+        
+        document.getElementById('eventCount').textContent = this.events.length;
+      },
+      
+      renderEvent(event) {
+        const timeline = document.getElementById('eventTimeline');
+        const el = document.createElement('div');
+        el.className = `timeline-event ${event.type}`;
+        
+        const typeColors = {
+          action: 'var(--neon-green)',
+          ai: 'var(--neon-purple)',
+          system: 'var(--neon-cyan)',
+          error: 'var(--neon-pink)'
+        };
+        
+        el.innerHTML = `
+          <div class="event-header">
+            <span class="event-type" style="color: ${typeColors[event.type] || typeColors.system}">${event.type}</span>
+            <span class="event-time">${new Date(event.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <div class="event-content">${event.content}</div>
+          ${event.position ? `<div class="event-position">Position: x:${event.position.x}, y:${event.position.y}</div>` : ''}
+        `;
+        
+        timeline.insertBefore(el, timeline.children[1]);
+        
+        while (timeline.children.length > 51) {
+          timeline.removeChild(timeline.lastChild);
+        }
+      },
+      
+      renderEvents() {
+        this.events.slice(0, 50).forEach(event => this.renderEvent(event));
+      },
+      
+      renderGraph() {
+        const container = document.getElementById('graphBars');
+        const max = Math.max(...this.graphData, 1);
+        
+        container.innerHTML = this.graphData.map((value, i) => {
+          const height = (value / max) * 100;
+          return `<div class="graph-bar" style="height: ${Math.max(height, 3)}%" data-value="${value}"></div>`;
+        }).join('');
+      },
+      
+      renderHeatmap() {
+        const container = document.getElementById('heatmap');
+        const max = Math.max(...this.heatmapData, 1);
+        
+        container.innerHTML = this.heatmapData.map((value, hour) => {
+          const level = Math.ceil((value / max) * 5);
+          return `<div class="heatmap-cell level-${level}" title="Hour ${hour}: ${value} events"></div>`;
+        }).join('');
+      },
+      
+      updateMetrics() {
+        document.getElementById('eventsToday').textContent = this.events.length;
+        document.getElementById('aiInteractions').textContent = this.aiInteractionCount;
+      },
+      
+      updateSessionDuration() {
+        const duration = Math.floor((Date.now() - this.sessionStart) / 1000);
+        const mins = Math.floor(duration / 60);
+        const secs = duration % 60;
+        document.getElementById('sessionDuration').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      },
+      
+      startWatching() {
+        document.addEventListener('click', (e) => {
+          this.logEvent('action', `Click on ${e.target.tagName.toLowerCase()}${e.target.id ? '#' + e.target.id : ''}`, {
+            position: { x: e.clientX, y: e.clientY },
+            target: e.target.tagName
+          });
+        });
+        
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            this.logEvent('action', 'Key press: Enter', { key: e.key });
+          }
+        });
+        
+        window.addEventListener('scroll', () => {
+          this.logEvent('action', 'Page scrolled', { scrollY: window.scrollY });
+        }, { passive: true });
+        
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'observer_ready' }, '*');
+        }
+        
+        window.addEventListener('message', (e) => {
+          if (e.data && e.data.type === 'app_event') {
+            this.logEvent(e.data.eventType || 'action', e.data.content, e.data.metadata);
+          }
+        });
+      },
+      
+      async addNote(title, content, tags = []) {
+        const note = {
+          id: Date.now(),
+          title,
+          content,
+          tags,
+          timestamp: new Date().toISOString()
+        };
+        
+        this.notes.unshift(note);
+        if (this.notes.length > 20) this.notes.pop();
+        
+        this.renderNote(note);
+      },
+      
+      renderNote(note) {
+        const container = document.getElementById('observerNotes');
+        const el = document.createElement('div');
+        el.className = 'note-card';
+        
+        el.innerHTML = `
+          <div class="note-header">
+            <div class="note-icon" style="background: linear-gradient(135deg, #8b5cf6, #00f5ff); width: 24px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #fff;">N</div>
+            <span class="note-title">${note.title}</span>
+            <span class="note-time">${new Date(note.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <div class="note-content">${note.content}</div>
+          ${note.tags.length ? `<div class="note-tags">${note.tags.map(t => `<span class="note-tag">${t}</span>`).join('')}</div>` : ''}
+        `;
+        
+        container.insertBefore(el, container.firstChild);
+      },
+      
+      renderNotes() {
+        this.notes.forEach(note => this.renderNote(note));
+      },
+      
+      async generateInsight() {
+        if (this.events.length < 3) {
+          this.addNote('Session Started', 'Observer Agent is now monitoring all app activity. I will analyze patterns and provide insights as you use the app.', ['startup', 'monitoring']);
+          return;
+        }
+        
+        const thinking = document.getElementById('thinkingIndicator');
+        thinking.style.display = 'flex';
+        
+        try {
+          const recentEvents = this.events.slice(0, 10).map(e => `${e.type}: ${e.content}`).join('\n');
+          
+          const response = await puter.ai.chat(
+            `You are an AI observer watching user activity in an app. Analyze these recent events and provide ONE brief insight (2-3 sentences) about patterns or behavior:\n\n${recentEvents}\n\nProvide a brief observation note.`,
+            { model: 'gemini-2.0-flash' }
+          );
+          
+          this.aiInteractionCount++;
+          this.updateMetrics();
+          
+          const text = this.getResponseText(response);
+          this.addNote('Pattern Observed', text, ['ai-insight', 'pattern']);
+          
+          this.logEvent('ai', 'Generated insight from activity analysis', { model: 'gemini-2.0-flash' });
+          
+        } catch (e) {
+          this.addNote('Observation', 'User is actively interacting with the interface. Activity levels are being tracked.', ['monitoring']);
+        }
+        
+        thinking.style.display = 'none';
+      },
+      
+      async askAboutActivity(query) {
+        const thinking = document.getElementById('thinkingIndicator');
+        thinking.style.display = 'flex';
+        
+        try {
+          const context = {
+            totalEvents: this.events.length,
+            recentEvents: this.events.slice(0, 20).map(e => ({ type: e.type, content: e.content, time: e.timestamp })),
+            sessionDuration: Math.floor((Date.now() - this.sessionStart) / 60000),
+            aiInteractions: this.aiInteractionCount
+          };
+          
+          const response = await puter.ai.chat(
+            `You are an AI observer monitoring user activity. Answer this question based on the activity data:\n\nQuestion: ${query}\n\nActivity Context:\n${JSON.stringify(context, null, 2)}\n\nProvide a helpful, concise answer.`,
+            { model: 'claude-sonnet-4' }
+          );
+          
+          this.aiInteractionCount++;
+          this.updateMetrics();
+          
+          const text = this.getResponseText(response);
+          this.addNote(`Q: ${query}`, text, ['query', 'analysis']);
+          
+          this.logEvent('ai', `Answered query: "${query}"`, { model: 'claude-sonnet-4' });
+          
+        } catch (e) {
+          this.addNote('Query Response', 'Please sign in to Puter to enable AI-powered analysis.', ['error']);
+        }
+        
+        thinking.style.display = 'none';
+      },
+      
+      getResponseText(response) {
+        let text = response?.message?.content || response;
+        if (Array.isArray(text)) text = text.map(t => t.text || t).join('');
+        return text;
+      },
+      
+      setupEventListeners() {
+        document.getElementById('queryBtn').addEventListener('click', () => {
+          const input = document.getElementById('queryInput');
+          const query = input.value.trim();
+          if (query) {
+            input.value = '';
+            this.askAboutActivity(query);
+          }
+        });
+        
+        document.getElementById('queryInput').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            document.getElementById('queryBtn').click();
+          }
+        });
+      }
+    };
+    
+    ObserverAgent.init();
+  </script>
+</body>
+</html>

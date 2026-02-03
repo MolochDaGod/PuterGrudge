@@ -1,0 +1,179 @@
+{
+  "name": "CloudPilot AI Studio Wiki",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-11T03:30:00Z",
+  "description": "Technical documentation manifest for agent knowledge base access",
+  "baseUrl": "/docs/wiki",
+  "phases": [
+    {
+      "id": "phase-01",
+      "name": "Security & Infrastructure",
+      "status": "complete",
+      "chapters": [
+        {
+          "id": "security-stack",
+          "title": "Security Stack",
+          "path": "/phase-01-security/security-stack.md",
+          "topics": ["helmet", "cors", "compression", "rate-limiting"]
+        },
+        {
+          "id": "logging-foundation",
+          "title": "Logging Foundation",
+          "path": "/phase-01-security/logging-foundation.md",
+          "topics": ["winston", "puter-kv", "ai-log-chat", "structured-logging"]
+        },
+        {
+          "id": "error-handling",
+          "title": "Error Handling",
+          "path": "/phase-01-security/error-handling.md",
+          "topics": ["error-recovery", "circuit-breaker", "retry-logic"]
+        }
+      ]
+    },
+    {
+      "id": "phase-02",
+      "name": "Puter.js API Integration",
+      "status": "in-progress",
+      "chapters": [
+        {
+          "id": "ai-functions",
+          "title": "AI Functions",
+          "path": "/phase-02-puter-api/ai-functions.md",
+          "topics": ["chat", "txt2img", "txt2speech", "img2txt", "speech2txt"]
+        },
+        {
+          "id": "cloud-storage",
+          "title": "Cloud Storage",
+          "path": "/phase-02-puter-api/cloud-storage.md",
+          "topics": ["fs.write", "fs.read", "fs.mkdir", "fs.readdir", "fs.delete"]
+        },
+        {
+          "id": "serverless-workers",
+          "title": "Serverless Workers",
+          "path": "/phase-02-puter-api/serverless-workers.md",
+          "topics": ["worker.create", "worker.exec", "worker.router"]
+        },
+        {
+          "id": "hosting",
+          "title": "Hosting & Deployment",
+          "path": "/phase-02-puter-api/hosting.md",
+          "topics": ["hosting.create", "hosting.update", "puter.site"]
+        },
+        {
+          "id": "kv-store",
+          "title": "Key-Value Store",
+          "path": "/phase-02-puter-api/kv-store.md",
+          "topics": ["kv.set", "kv.get", "kv.incr", "kv.expire"]
+        },
+        {
+          "id": "model-catalog",
+          "title": "Model Catalog",
+          "path": "/phase-02-puter-api/model-catalog.md",
+          "topics": ["gpt-4", "claude-3", "gemini", "llama", "mistral"]
+        }
+      ]
+    },
+    {
+      "id": "phase-03",
+      "name": "Certification Framework",
+      "status": "in-progress",
+      "chapters": [
+        {
+          "id": "certification-levels",
+          "title": "Certification Levels",
+          "path": "/phase-03-certification/certification-levels.md",
+          "topics": ["apprentice", "developer", "advanced", "expert", "architect"]
+        },
+        {
+          "id": "connection-auditor",
+          "title": "Connection Auditor",
+          "path": "/phase-03-certification/connection-auditor.md",
+          "topics": ["api-testing", "database-connections", "websocket-verification"]
+        },
+        {
+          "id": "route-verifier",
+          "title": "Route Verifier",
+          "path": "/phase-03-certification/route-verifier.md",
+          "topics": ["endpoint-testing", "http-status", "response-validation"]
+        },
+        {
+          "id": "audit-checklist",
+          "title": "215-Point Audit Checklist",
+          "path": "/phase-03-certification/audit-checklist.md",
+          "topics": ["infrastructure", "routing", "websocket", "error-handling", "ai-performance", "security", "documentation", "testing"]
+        }
+      ]
+    },
+    {
+      "id": "phase-04",
+      "name": "User Onboarding",
+      "status": "in-progress",
+      "chapters": [
+        {
+          "id": "user-detection",
+          "title": "User Detection",
+          "path": "/phase-04-onboarding/user-detection.md",
+          "topics": ["puter-id", "new-user-flow", "middleware"]
+        },
+        {
+          "id": "agent-creation",
+          "title": "AI Agent Creation",
+          "path": "/phase-04-onboarding/agent-creation.md",
+          "topics": ["agent-config", "knowledge-bases", "model-selection"]
+        },
+        {
+          "id": "grudgechain",
+          "title": "GrudgeChain Integration",
+          "path": "/phase-04-onboarding/grudgechain.md",
+          "topics": ["admin-account", "folder-structure", "permissions"]
+        },
+        {
+          "id": "helloworld",
+          "title": "HelloWorld Deployment",
+          "path": "/phase-04-onboarding/helloworld.md",
+          "topics": ["first-deploy", "puter-hosting", "site-creation"]
+        }
+      ]
+    }
+  ],
+  "legal": [
+    {
+      "id": "tos",
+      "title": "Terms of Service",
+      "path": "/legal/tos.md"
+    },
+    {
+      "id": "privacy",
+      "title": "Privacy Policy",
+      "path": "/legal/privacy.md"
+    },
+    {
+      "id": "attributions",
+      "title": "Attributions & Licenses",
+      "path": "/legal/attributions.md"
+    }
+  ],
+  "appendix": [
+    {
+      "id": "model-catalog",
+      "title": "AI Model Catalog (500+ models)",
+      "path": "/appendix/model-catalog.md"
+    },
+    {
+      "id": "api-reference",
+      "title": "Puter.js API Quick Reference",
+      "path": "/appendix/api-reference.md"
+    },
+    {
+      "id": "free-apis",
+      "title": "Free API Resources",
+      "path": "/appendix/free-apis.md"
+    }
+  ],
+  "agentAccess": {
+    "enabled": true,
+    "searchEndpoint": "/api/wiki/search",
+    "indexEndpoint": "/api/wiki/index",
+    "contentEndpoint": "/api/wiki/content"
+  }
+}

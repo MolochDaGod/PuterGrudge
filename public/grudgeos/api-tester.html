@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Tester - GrudgeOS</title>
+  <link rel="stylesheet" href="styles/common.css">
+  <script src="lib/system-nav.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-hover: #1a1a24;
+      --border: rgba(139, 92, 246, 0.2);
+      --neon-purple: #8b5cf6;
+      --neon-cyan: #00f5ff;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --neon-pink: #ff006e;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 260px 1fr 320px;
+      height: 100vh;
+    }
+    
+    .sidebar {
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .sidebar h2 {
+      font-size: 14px;
+      color: var(--neon-cyan);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .command-group {
+      margin-bottom: 16px;
+    }
+    
+    .command-group-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    
+    .command-btn {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      background: var(--bg-hover);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    
+    .command-btn:hover {
+      border-color: var(--neon-purple);
+      background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .command-btn.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.1);
+    }
+    
+    .command-btn .method {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 8px;
+      font-weight: 600;
+    }
+    
+    .method.get { background: rgba(0, 255, 136, 0.2); color: var(--neon-green); }
+    .method.post { background: rgba(0, 245, 255, 0.2); color: var(--neon-cyan); }
+    .method.delete { background: rgba(255, 0, 110, 0.2); color: var(--neon-pink); }
+    .method.patch { background: rgba(255, 107, 53, 0.2); color: var(--neon-orange); }
+    
+    .main-panel {
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .panel-header h1 {
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--neon-green);
+    }
+    
+    .request-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .endpoint-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-dark);
+      border-radius: 6px;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+    }
+    
+    .endpoint-display .method {
+      font-weight: 700;
+    }
+    
+    .body-editor {
+      width: 100%;
+      min-height: 120px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      padding: 12px;
+      resize: vertical;
+    }
+    
+    .body-editor:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+    }
+    
+    .send-btn {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .send-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    }
+    
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .response-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      flex: 1;
+    }
+    
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .response-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+    }
+    
+    .response-meta span {
+      padding: 4px 8px;
+      background: var(--bg-dark);
+      border-radius: 4px;
+    }
+    
+    .response-meta .status-ok { color: var(--neon-green); }
+    .response-meta .status-err { color: var(--neon-pink); }
+    
+    .response-body {
+      background: var(--bg-dark);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .response-body .key { color: var(--neon-purple); }
+    .response-body .string { color: var(--neon-green); }
+    .response-body .number { color: var(--neon-orange); }
+    .response-body .boolean { color: var(--neon-cyan); }
+    .response-body .null { color: var(--text-secondary); }
+    
+    .history-panel {
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .history-panel h3 {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    
+    .history-item {
+      padding: 10px;
+      background: var(--bg-dark);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .history-item:hover {
+      background: var(--bg-hover);
+    }
+    
+    .history-item .time {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .history-item .endpoint {
+      font-size: 11px;
+      font-family: 'Consolas', monospace;
+      margin-top: 4px;
+    }
+    
+    .history-item .status {
+      font-size: 10px;
+      margin-top: 4px;
+    }
+    
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .quick-btn {
+      flex: 1;
+      padding: 8px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .quick-btn:hover {
+      border-color: var(--neon-purple);
+      color: var(--text-primary);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .loading { animation: pulse 1s infinite; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <h2>API Commands</h2>
+      
+      <div class="command-group">
+        <div class="command-group-title">Core</div>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/ping">
+          <span class="method get">GET</span>ping
+        </button>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/status">
+          <span class="method get">GET</span>status
+        </button>
+      </div>
+      
+      <div class="command-group">
+        <div class="command-group-title">CRUD</div>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/create" data-body='{"type":"test","data":{"name":"example"}}'>
+          <span class="method post">POST</span>create
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/render" data-body='{"template":"card","data":{"title":"Test"}}'>
+          <span class="method post">POST</span>render
+        </button>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/show/{id}" data-param="id">
+          <span class="method get">GET</span>show
+        </button>
+        <button class="command-btn" data-method="DELETE" data-endpoint="/api/v1/internal/remove/{id}" data-param="id">
+          <span class="method delete">DEL</span>remove
+        </button>
+      </div>
+      
+      <div class="command-group">
+        <div class="command-group-title">Cache</div>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/cache">
+          <span class="method get">GET</span>cache list
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/cache" data-body='{"key":"mykey","value":"myvalue","ttl":3600}'>
+          <span class="method post">POST</span>cache set
+        </button>
+        <button class="command-btn" data-method="DELETE" data-endpoint="/api/v1/internal/cache">
+          <span class="method delete">DEL</span>cache clear
+        </button>
+      </div>
+      
+      <div class="command-group">
+        <div class="command-group-title">Logging</div>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/log">
+          <span class="method get">GET</span>log list
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/log" data-body='{"level":"info","message":"Test log entry","source":"api-tester"}'>
+          <span class="method post">POST</span>log add
+        </button>
+      </div>
+      
+      <div class="command-group">
+        <div class="command-group-title">Storage</div>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/save" data-body='{"key":"mydata","data":{"foo":"bar"},"namespace":"test"}'>
+          <span class="method post">POST</span>save
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/savecloud" data-body='{"key":"cloudkey","data":{"cloud":true}}'>
+          <span class="method post">POST</span>savecloud
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/saveai" data-body='{"agentId":"coder","context":"user prefers TypeScript","memory":{}}'>
+          <span class="method post">POST</span>saveai
+        </button>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/recall?key=mydata&namespace=test">
+          <span class="method get">GET</span>recall
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/recall" data-body='{"pattern":"ai_memory","limit":10}'>
+          <span class="method post">POST</span>recall search
+        </button>
+      </div>
+      
+      <div class="command-group">
+        <div class="command-group-title">Tasks</div>
+        <button class="command-btn" data-method="GET" data-endpoint="/api/v1/internal/task">
+          <span class="method get">GET</span>task list
+        </button>
+        <button class="command-btn" data-method="POST" data-endpoint="/api/v1/internal/task" data-body='{"description":"Build new feature","priority":"high"}'>
+          <span class="method post">POST</span>task create
+        </button>
+        <button class="command-btn" data-method="PATCH" data-endpoint="/api/v1/internal/task/{id}" data-param="id" data-body='{"status":"completed"}'>
+          <span class="method patch">PATCH</span>task update
+        </button>
+        <button class="command-btn" data-method="DELETE" data-endpoint="/api/v1/internal/task/{id}" data-param="id">
+          <span class="method delete">DEL</span>task delete
+        </button>
+      </div>
+    </div>
+    
+    <div class="main-panel">
+      <div class="panel-header">
+        <h1>Internal API Tester</h1>
+        <span class="status-badge" id="serverStatus">Checking...</span>
+      </div>
+      
+      <div class="request-section">
+        <div class="section-title">Request</div>
+        <div class="endpoint-display">
+          <span class="method get" id="reqMethod">GET</span>
+          <span id="reqEndpoint">/api/v1/internal/ping</span>
+        </div>
+      </div>
+      
+      <div class="request-section" id="bodySection" style="display: none;">
+        <div class="section-title">Request Body (JSON)</div>
+        <textarea class="body-editor" id="reqBody" placeholder='{"key": "value"}'></textarea>
+      </div>
+      
+      <div class="request-section" id="paramSection" style="display: none;">
+        <div class="section-title">Parameter: <span id="paramName">id</span></div>
+        <input type="text" class="body-editor" id="reqParam" placeholder="Enter value..." style="min-height: auto; height: 42px;">
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <button class="send-btn" id="sendBtn">Send Request</button>
+      </div>
+      
+      <div class="response-section">
+        <div class="response-header">
+          <div class="section-title">Response</div>
+          <div class="response-meta">
+            <span id="resStatus" class="status-ok">-</span>
+            <span id="resTime">-</span>
+          </div>
+        </div>
+        <div class="response-body" id="resBody">Click a command to test...</div>
+      </div>
+    </div>
+    
+    <div class="history-panel">
+      <h3>Request History</h3>
+      <div id="historyList"></div>
+      
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="clearHistory()">Clear History</button>
+        <button class="quick-btn" onclick="exportHistory()">Export</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let currentEndpoint = '/api/v1/internal/ping';
+    let currentMethod = 'GET';
+    let currentBody = null;
+    let currentParam = null;
+    let history = [];
+    
+    document.querySelectorAll('.command-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.command-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentMethod = btn.dataset.method;
+        currentEndpoint = btn.dataset.endpoint;
+        currentBody = btn.dataset.body || null;
+        currentParam = btn.dataset.param || null;
+        
+        document.getElementById('reqMethod').textContent = currentMethod;
+        document.getElementById('reqMethod').className = `method ${currentMethod.toLowerCase()}`;
+        document.getElementById('reqEndpoint').textContent = currentEndpoint;
+        
+        const bodySection = document.getElementById('bodySection');
+        const paramSection = document.getElementById('paramSection');
+        
+        if (currentBody) {
+          bodySection.style.display = 'block';
+          document.getElementById('reqBody').value = JSON.stringify(JSON.parse(currentBody), null, 2);
+        } else {
+          bodySection.style.display = 'none';
+        }
+        
+        if (currentParam) {
+          paramSection.style.display = 'block';
+          document.getElementById('paramName').textContent = currentParam;
+          document.getElementById('reqParam').value = '';
+        } else {
+          paramSection.style.display = 'none';
+        }
+      });
+    });
+    
+    document.getElementById('sendBtn').addEventListener('click', sendRequest);
+    
+    async function sendRequest() {
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      
+      let endpoint = currentEndpoint;
+      if (currentParam) {
+        const paramValue = document.getElementById('reqParam').value;
+        endpoint = endpoint.replace(`{${currentParam}}`, paramValue);
+      }
+      
+      const startTime = performance.now();
+      
+      try {
+        const options = {
+          method: currentMethod,
+          headers: { 'Content-Type': 'application/json' }
+        };
+        
+        if (currentBody && (currentMethod === 'POST' || currentMethod === 'PATCH')) {
+          options.body = document.getElementById('reqBody').value;
+        }
+        
+        const response = await fetch(endpoint, options);
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+        
+        const data = await response.json();
+        
+        document.getElementById('resStatus').textContent = `${response.status} ${response.statusText}`;
+        document.getElementById('resStatus').className = response.ok ? 'status-ok' : 'status-err';
+        document.getElementById('resTime').textContent = `${duration}ms`;
+        document.getElementById('resBody').innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+        
+        addToHistory(currentMethod, endpoint, response.status, duration);
+        
+      } catch (err) {
+        document.getElementById('resStatus').textContent = 'Error';
+        document.getElementById('resStatus').className = 'status-err';
+        document.getElementById('resBody').textContent = err.message;
+      }
+      
+      btn.disabled = false;
+      btn.textContent = 'Send Request';
+    }
+    
+    function syntaxHighlight(json) {
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'key';
+          } else {
+            cls = 'string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'boolean';
+        } else if (/null/.test(match)) {
+          cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+    
+    function addToHistory(method, endpoint, status, duration) {
+      history.unshift({
+        method, endpoint, status, duration,
+        time: new Date().toLocaleTimeString()
+      });
+      
+      if (history.length > 20) history.pop();
+      renderHistory();
+    }
+    
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = history.map((h, i) => `
+        <div class="history-item" onclick="replayHistory(${i})">
+          <div class="time">${h.time}</div>
+          <div class="endpoint"><span class="method ${h.method.toLowerCase()}" style="font-size:9px;padding:2px 4px;border-radius:3px;margin-right:4px;">${h.method}</span>${h.endpoint}</div>
+          <div class="status" style="color: ${h.status < 400 ? 'var(--neon-green)' : 'var(--neon-pink)'}">
+            ${h.status} - ${h.duration}ms
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function replayHistory(index) {
+      const item = history[index];
+      currentEndpoint = item.endpoint;
+      currentMethod = item.method;
+      
+      document.getElementById('reqMethod').textContent = currentMethod;
+      document.getElementById('reqMethod').className = `method ${currentMethod.toLowerCase()}`;
+      document.getElementById('reqEndpoint').textContent = currentEndpoint;
+    }
+    
+    function clearHistory() {
+      history = [];
+      renderHistory();
+    }
+    
+    function exportHistory() {
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'api-test-history.json';
+      a.click();
+    }
+    
+    async function checkServer() {
+      try {
+        const res = await fetch('/api/v1/internal/ping');
+        if (res.ok) {
+          document.getElementById('serverStatus').textContent = 'Connected';
+          document.getElementById('serverStatus').style.background = 'rgba(0, 255, 136, 0.2)';
+          document.getElementById('serverStatus').style.color = 'var(--neon-green)';
+        }
+      } catch (e) {
+        document.getElementById('serverStatus').textContent = 'Disconnected';
+        document.getElementById('serverStatus').style.background = 'rgba(255, 0, 110, 0.2)';
+        document.getElementById('serverStatus').style.color = 'var(--neon-pink)';
+      }
+    }
+    
+    checkServer();
+    setInterval(checkServer, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games Launcher - GrudgeOS</title>
+  <link rel="stylesheet" href="styles/common.css">
+  <link rel="stylesheet" href="styles/desktop.css">
+  <script src="lib/system-nav.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a25;
+      --bg-hover: #252535;
+      --accent: #e94560;
+      --accent-glow: rgba(233, 69, 96, 0.3);
+      --text-primary: #ffffff;
+      --text-secondary: #8b8b9b;
+      --border: #2a2a3a;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .launcher {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-section {
+      padding: 16px;
+    }
+
+    .nav-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding: 0 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--accent)20, var(--accent)10);
+      border-left: 3px solid var(--accent);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .main-content {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      width: 300px;
+    }
+
+    .search-bar input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      outline: none;
+      flex: 1;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .game-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px var(--accent-glow);
+      border-color: var(--accent);
+    }
+
+    .game-thumbnail {
+      height: 160px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      position: relative;
+    }
+
+    .game-status {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-online {
+      background: var(--success);
+      color: white;
+    }
+
+    .status-players {
+      background: rgba(255,255,255,0.15);
+      color: white;
+    }
+
+    .game-info {
+      padding: 16px;
+    }
+
+    .game-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .game-meta {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .game-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: var(--bg-hover);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .right-panel {
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-section {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lobby-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lobby-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lobby-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .lobby-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .lobby-info {
+      flex: 1;
+    }
+
+    .lobby-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .lobby-players {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .lobby-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      min-height: 300px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .chat-message {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      flex-shrink: 0;
+    }
+
+    .chat-content {
+      flex: 1;
+    }
+
+    .chat-author {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .chat-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .chat-input input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-send {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-send:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .character-selector {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .character-option {
+      aspect-ratio: 1;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .character-option:hover {
+      border-color: var(--accent);
+    }
+
+    .character-option.selected {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent)20, transparent);
+    }
+
+    .character-icon {
+      font-size: 24px;
+    }
+
+    .character-name {
+      font-size: 10px;
+      text-transform: capitalize;
+    }
+
+    .server-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .flipflip-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      border: none;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .flipflip-btn:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">G</div>
+          <span>Games</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">Browse</div>
+        <div class="nav-item active" data-view="all">
+          <span>All Games</span>
+        </div>
+        <div class="nav-item" data-view="pvp">
+          <span>PvP Arena</span>
+          <span class="nav-badge">3</span>
+        </div>
+        <div class="nav-item" data-view="pve">
+          <span>PvE / Co-op</span>
+        </div>
+        <div class="nav-item" data-view="mmo">
+          <span>MMO Worlds</span>
+          <span class="nav-badge">2</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">My Games</div>
+        <div class="nav-item" data-view="favorites">
+          <span>Favorites</span>
+        </div>
+        <div class="nav-item" data-view="recent">
+          <span>Recently Played</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">Agent Tools</div>
+        <div class="nav-item" data-action="create-server">
+          <span>Create Server</span>
+        </div>
+        <div class="nav-item" data-action="ai-scaffold">
+          <span>AI Scaffold World</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <div class="content-header">
+        <h1 class="page-title">Arena Games</h1>
+        <div class="search-bar">
+          <span>Search</span>
+          <input type="text" placeholder="Search games..." id="search-input" data-testid="input-search">
+        </div>
+      </div>
+
+      <div class="games-grid" id="games-grid">
+        <div class="game-card" data-game="hide_and_seek" data-testid="card-game-hide-and-seek">
+          <div class="game-thumbnail">
+            <span class="game-status status-online">Live</span>
+            <span class="game-status status-players" style="top:auto;bottom:12px;">12 players</span>
+          </div>
+          <div class="game-info">
+            <h3 class="game-title">Hide and Seek</h3>
+            <p class="game-meta">3-8 Players - Grudge Models</p>
+            <div class="game-tags">
+              <span class="tag">PvP</span>
+              <span class="tag">Asymmetric</span>
+              <span class="tag">Party</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-game="catapult_arena" data-testid="card-game-catapult">
+          <div class="game-thumbnail">
+            <span class="game-status status-online">Live</span>
+            <span class="game-status status-players" style="top:auto;bottom:12px;">8 players</span>
+          </div>
+          <div class="game-info">
+            <h3 class="game-title">Catapult Arena</h3>
+            <p class="game-meta">2-8 Players - Team Battle</p>
+            <div class="game-tags">
+              <span class="tag">PvP</span>
+              <span class="tag">Physics</span>
+              <span class="tag">Strategy</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-game="mmo" data-testid="card-game-mmo">
+          <div class="game-thumbnail">
+            <span class="game-status status-online">Live</span>
+            <span class="game-status status-players" style="top:auto;bottom:12px;">47 players</span>
+          </div>
+          <div class="game-info">
+            <h3 class="game-title">Grudge MMO</h3>
+            <p class="game-meta">Massive - Persistent World</p>
+            <div class="game-tags">
+              <span class="tag">MMO</span>
+              <span class="tag">RPG</span>
+              <span class="tag">Open World</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" style="margin-top: 32px;">
+        <div class="panel-title">Select Character</div>
+        <div class="character-selector" id="character-selector">
+          <div class="character-option selected" data-model="orc" data-testid="btn-character-orc">
+            <span class="character-icon">ORC</span>
+            <span class="character-name">Orc</span>
+          </div>
+          <div class="character-option" data-model="human" data-testid="btn-character-human">
+            <span class="character-icon">HUM</span>
+            <span class="character-name">Human</span>
+          </div>
+          <div class="character-option" data-model="barbarian" data-testid="btn-character-barbarian">
+            <span class="character-icon">BAR</span>
+            <span class="character-name">Barbarian</span>
+          </div>
+          <div class="character-option" data-model="elf" data-testid="btn-character-elf">
+            <span class="character-icon">ELF</span>
+            <span class="character-name">Elf</span>
+          </div>
+          <div class="character-option" data-model="dwarf" data-testid="btn-character-dwarf">
+            <span class="character-icon">DWF</span>
+            <span class="character-name">Dwarf</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section" style="margin-top: 24px;">
+        <div class="panel-title">Server Stats</div>
+        <div class="server-stats">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-rooms">0</div>
+            <div class="stat-label">Rooms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-players">0</div>
+            <div class="stat-label">Players</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-uptime">0m</div>
+            <div class="stat-label">Uptime</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right-panel">
+      <div class="panel-section">
+        <div class="panel-title">Active Lobbies</div>
+        <div class="lobby-list" id="lobby-list">
+          <div class="lobby-item">
+            <div class="lobby-avatar">H</div>
+            <div class="lobby-info">
+              <div class="lobby-name">Hide & Seek #1</div>
+              <div class="lobby-players">4/8 players</div>
+            </div>
+            <div class="lobby-status"></div>
+          </div>
+          <div class="lobby-item">
+            <div class="lobby-avatar">C</div>
+            <div class="lobby-info">
+              <div class="lobby-name">Catapult Battle</div>
+              <div class="lobby-players">6/8 players</div>
+            </div>
+            <div class="lobby-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-container">
+        <div class="panel-title">Lobby Chat</div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-message">
+            <div class="chat-avatar"></div>
+            <div class="chat-content">
+              <div class="chat-author">System</div>
+              <div class="chat-text">Welcome to the Games Launcher!</div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="Type a message..." id="chat-input" data-testid="input-chat">
+          <button class="btn-send" id="btn-send" data-testid="btn-send-chat">Send</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <button class="btn-primary" id="btn-quick-play" data-testid="btn-quick-play" style="width:100%">
+          Quick Play
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <button class="flipflip-btn" id="btn-flipflip" data-testid="btn-flipflip">
+    <span>Return to CloudPilot</span>
+  </button>
+
+  <script src="lib/flipflip/flipflip.js"></script>
+  <script>
+    class GamesLauncher {
+      constructor() {
+        this.ws = null;
+        this.playerId = null;
+        this.currentRoom = null;
+        this.selectedCharacter = 'orc';
+        this.selectedGame = null;
+        this.flipflip = null;
+        this.startTime = Date.now();
+        
+        this.init();
+      }
+
+      init() {
+        this.flipflip = new FlipFlipTransition({
+          duration: 800,
+          glowColor: '#e94560'
+        });
+        
+        this.connectWebSocket();
+        this.setupEventListeners();
+        this.updateStats();
+        
+        setInterval(() => this.updateStats(), 5000);
+        setInterval(() => this.updateUptime(), 1000);
+      }
+
+      connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/arena`;
+        
+        this.ws = new WebSocket(wsUrl);
+        
+        this.ws.onopen = () => {
+          console.log('[GamesLauncher] Connected to Arena server');
+          this.addChatMessage('System', 'Connected to game server');
+        };
+        
+        this.ws.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          this.handleMessage(message);
+        };
+        
+        this.ws.onclose = () => {
+          console.log('[GamesLauncher] Disconnected');
+          this.addChatMessage('System', 'Disconnected from server');
+          setTimeout(() => this.connectWebSocket(), 3000);
+        };
+        
+        this.ws.onerror = (error) => {
+          console.error('[GamesLauncher] WebSocket error:', error);
+        };
+      }
+
+      handleMessage(message) {
+        switch (message.type) {
+          case 'connected':
+            this.playerId = message.data.clientId;
+            break;
+          case 'room_list':
+            this.updateLobbyList(message.data.rooms);
+            break;
+          case 'chat':
+            this.addChatMessage(message.data.senderName, message.data.content);
+            break;
+          case 'joined':
+            this.currentRoom = message.data.roomId;
+            this.addChatMessage('System', `Joined ${message.data.roomName}`);
+            break;
+          case 'player_joined':
+            this.addChatMessage('System', `${message.data.playerName} joined`);
+            break;
+          case 'player_left':
+            this.addChatMessage('System', `${message.data.playerName} left`);
+            break;
+          case 'game_starting':
+            this.addChatMessage('System', `Game starting in ${message.data.countdown}...`);
+            break;
+        }
+      }
+
+      send(type, data = {}) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type, data }));
+        }
+      }
+
+      setupEventListeners() {
+        document.querySelectorAll('.game-card').forEach(card => {
+          card.addEventListener('click', () => {
+            this.selectedGame = card.dataset.game;
+            document.querySelectorAll('.game-card').forEach(c => c.style.borderColor = '');
+            card.style.borderColor = 'var(--accent)';
+          });
+        });
+
+        document.querySelectorAll('.character-option').forEach(option => {
+          option.addEventListener('click', () => {
+            this.selectedCharacter = option.dataset.model;
+            document.querySelectorAll('.character-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+          });
+        });
+
+        document.getElementById('btn-quick-play').addEventListener('click', () => {
+          if (!this.selectedGame) {
+            this.addChatMessage('System', 'Please select a game first');
+            return;
+          }
+          this.send('quick_play', {
+            gameType: this.selectedGame,
+            name: `Player_${this.playerId?.slice(0, 4) || 'Guest'}`,
+            characterModel: this.selectedCharacter
+          });
+        });
+
+        document.getElementById('btn-send').addEventListener('click', () => this.sendChat());
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.sendChat();
+        });
+
+        document.getElementById('btn-flipflip').addEventListener('click', async () => {
+          await this.flipflip.switchContext('games', 'cloudpilot', {
+            onSwitch: () => {
+              window.location.href = '/';
+            }
+          });
+        });
+
+        document.querySelectorAll('.nav-item[data-action]').forEach(item => {
+          item.addEventListener('click', () => {
+            const action = item.dataset.action;
+            if (action === 'create-server') {
+              this.createServer();
+            } else if (action === 'ai-scaffold') {
+              this.scaffoldWorld();
+            }
+          });
+        });
+      }
+
+      sendChat() {
+        const input = document.getElementById('chat-input');
+        const content = input.value.trim();
+        if (!content) return;
+        
+        this.send('chat', { content });
+        input.value = '';
+      }
+
+      addChatMessage(author, text) {
+        const container = document.getElementById('chat-messages');
+        const msg = document.createElement('div');
+        msg.className = 'chat-message';
+        msg.innerHTML = `
+          <div class="chat-avatar"></div>
+          <div class="chat-content">
+            <div class="chat-author">${author}</div>
+            <div class="chat-text">${text}</div>
+          </div>
+        `;
+        container.appendChild(msg);
+        container.scrollTop = container.scrollHeight;
+      }
+
+      updateLobbyList(rooms) {
+        const container = document.getElementById('lobby-list');
+        container.innerHTML = rooms.map(room => `
+          <div class="lobby-item" data-room="${room.id}">
+            <div class="lobby-avatar">${room.gameType[0].toUpperCase()}</div>
+            <div class="lobby-info">
+              <div class="lobby-name">${room.name}</div>
+              <div class="lobby-players">${room.playerCount}/${room.maxPlayers} players</div>
+            </div>
+            <div class="lobby-status"></div>
+          </div>
+        `).join('');
+
+        container.querySelectorAll('.lobby-item').forEach(item => {
+          item.addEventListener('click', () => {
+            this.send('join_room', {
+              roomId: item.dataset.room,
+              name: `Player_${this.playerId?.slice(0, 4) || 'Guest'}`,
+              characterModel: this.selectedCharacter
+            });
+          });
+        });
+      }
+
+      async updateStats() {
+        try {
+          const res = await fetch('/api/v1/arena/status');
+          const data = await res.json();
+          
+          if (data.success) {
+            document.getElementById('stat-rooms').textContent = data.data.server.rooms;
+            document.getElementById('stat-players').textContent = data.data.server.clients;
+          }
+        } catch (e) {
+          console.log('[GamesLauncher] Stats fetch failed');
+        }
+      }
+
+      updateUptime() {
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('stat-uptime').textContent = `${minutes}m ${seconds}s`;
+      }
+
+      async createServer() {
+        if (!this.selectedGame) {
+          this.addChatMessage('System', 'Please select a game type first');
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/v1/arena/agent/deployments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: `${this.selectedGame} Server`,
+              gameType: this.selectedGame
+            })
+          });
+          
+          const data = await res.json();
+          if (data.success) {
+            this.addChatMessage('Agent', `Created server: ${data.data.name}`);
+          }
+        } catch (e) {
+          this.addChatMessage('System', 'Failed to create server');
+        }
+      }
+
+      async scaffoldWorld() {
+        try {
+          const res = await fetch('/api/v1/arena/agent/scaffold', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              template: 'fantasy',
+              zones: ['town_square', 'forest', 'dungeon', 'arena'],
+              features: ['chat', 'trading', 'quests', 'pvp']
+            })
+          });
+          
+          const data = await res.json();
+          if (data.success) {
+            this.addChatMessage('Agent', `Scaffolding new metaverse... Task ID: ${data.data.taskId}`);
+          }
+        } catch (e) {
+          this.addChatMessage('System', 'Failed to scaffold world');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.gamesLauncher = new GamesLauncher();
+    });
+  </script>
+</body>
+</html>

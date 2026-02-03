@@ -1,0 +1,10 @@
+export { WindowManagerProvider, useWindowManager } from './WindowManager';
+export type { WindowState } from './WindowManager';
+export { WindowShell } from './WindowShell';
+export { TOOL_REGISTRY, CompilerTool, ArchiveTool, ConverterTool, StorageBrowser, QdrantTool } from './tools';
+export { GrudgeDock } from './GrudgeDock';
+export { OperationsPanel } from './OperationsPanel';
+export { VSCodeShell } from './VSCodeShell';
+export { AIConsole } from './AIConsole';
+export { UserOnboarding } from './UserOnboarding';
+export { AIVMDesktop } from './AIVMDesktop';

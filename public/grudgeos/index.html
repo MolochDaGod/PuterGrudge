@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/grudgeos/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a5a5a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Grudge Studio" />
+    <meta name="description" content="Grudge Studio - Game Development Platform with AI, Storage, and Cloud Services" />
+    <link rel="manifest" href="/grudgeos/manifest.json" />
+    <link rel="apple-touch-icon" href="/grudgeos/pwa-192x192.png" />
+    <script src="https://js.puter.com/v2/"></script>
+    <title>Grudge Studio</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+      
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'VT323', monospace;
+        background: #1a1a2e;
+        color: #FFFFFF;
+        overflow: hidden;
+        -webkit-user-select: none;
+           -moz-user-select: none;
+                user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      #root {
+        position: relative;
+        width: calc(100vw - 40px);
+        height: calc(100vh - 40px);
+        max-width: 1600px;
+        max-height: 1000px;
+        background: #2F2F2F;
+        border-radius: 16px;
+        border: 3px solid rgba(139, 92, 246, 0.4);
+        box-shadow: 
+          0 0 60px rgba(139, 92, 246, 0.3),
+          0 20px 60px rgba(0, 0, 0, 0.6),
+          inset 0 0 100px rgba(139, 92, 246, 0.05);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #root::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, transparent, #00f5ff, transparent);
+        border-radius: 0 0 4px 4px;
+        z-index: 9999;
+      }
+    </style>
+    <script type="module" crossorigin src="/grudgeos/assets/index-Barxz-0Y.js"></script>
+    <link rel="stylesheet" crossorigin href="/grudgeos/assets/index-Ak0XkRfn.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/grudgeos/sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW registration failed:', err));
+        });
+      }
+    </script>
+  </body>
+</html>

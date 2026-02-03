@@ -1,0 +1,439 @@
+.grudgecloud-container {
+  display: flex;
+  height: 100%;
+  background: rgba(10, 10, 20, 0.95);
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.cloud-sidebar {
+  width: 220px;
+  background: rgba(20, 20, 35, 0.9);
+  border-right: 1px solid rgba(0, 245, 255, 0.2);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cloud-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cloud-nav-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+  padding: 8px 8px 4px;
+  font-weight: 600;
+}
+
+.cloud-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.cloud-nav-item:hover {
+  background: rgba(0, 245, 255, 0.1);
+}
+
+.cloud-nav-item.active {
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(139, 92, 246, 0.2));
+  border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.nav-icon {
+  font-size: 16px;
+}
+
+.nav-badge {
+  margin-left: auto;
+  background: rgba(0, 245, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: #00f5ff;
+}
+
+.nav-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+.nav-status.active {
+  background: #00ff88;
+  box-shadow: 0 0 6px #00ff88;
+}
+
+.nav-status.inactive {
+  background: #666;
+}
+
+.cloud-nav-empty {
+  padding: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.cloud-storage-widget {
+  margin-top: auto;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 245, 255, 0.15);
+}
+
+.storage-header {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.storage-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.storage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5ff, #8b5cf6);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.storage-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cloud-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cloud-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  background: rgba(20, 20, 35, 0.5);
+}
+
+.cloud-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.breadcrumb-item {
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.breadcrumb-item:hover {
+  color: #00f5ff;
+}
+
+.breadcrumb-sep {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.cloud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cloud-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  background: rgba(0, 245, 255, 0.1);
+  color: #e0e0e0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cloud-btn:hover {
+  background: rgba(0, 245, 255, 0.2);
+  border-color: rgba(0, 245, 255, 0.5);
+}
+
+.cloud-btn.primary {
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.3), rgba(139, 92, 246, 0.3));
+  border-color: rgba(0, 245, 255, 0.5);
+}
+
+.cloud-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.4), rgba(139, 92, 246, 0.4));
+}
+
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+}
+
+.view-btn {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.view-btn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.view-btn:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.view-btn.active {
+  background: rgba(0, 245, 255, 0.2);
+  color: #00f5ff;
+  border-color: rgba(0, 245, 255, 0.4);
+}
+
+.cloud-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.cloud-content.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.cloud-content.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cloud-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.file-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  background: rgba(30, 30, 50, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.file-card:hover {
+  background: rgba(0, 245, 255, 0.1);
+  border-color: rgba(0, 245, 255, 0.3);
+}
+
+.file-card.selected {
+  background: rgba(0, 245, 255, 0.15);
+  border-color: #00f5ff;
+}
+
+.file-card-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.file-card-name {
+  font-size: 12px;
+  text-align: center;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.file-card-size {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+}
+
+.file-star {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 12px;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px 100px 40px 60px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(30, 30, 50, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: 8px;
+}
+
+.file-row:hover {
+  background: rgba(0, 245, 255, 0.1);
+}
+
+.file-row.selected {
+  background: rgba(0, 245, 255, 0.15);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.file-icon {
+  font-size: 20px;
+  text-align: center;
+}
+
+.file-name {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size,
+.file-modified,
+.file-app {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.file-menu {
+  cursor: pointer;
+  padding: 4px;
+}
+
+.file-menu:hover {
+  color: #00f5ff;
+}
+
+.cloud-recent {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0, 245, 255, 0.1);
+  background: rgba(20, 20, 35, 0.5);
+}
+
+.recent-header {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recent-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(30, 30, 50, 0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.recent-item:hover {
+  background: rgba(0, 245, 255, 0.1);
+}
+
+.recent-icon {
+  font-size: 14px;
+}
+
+.recent-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-time {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 255, 0.5);
+}

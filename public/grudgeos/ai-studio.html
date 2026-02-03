@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Studio - GrudgeOS</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <link rel="stylesheet" href="styles/common.css">
+  <script src="lib/system-nav.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg-dark: #0a0a12;
+      --bg-panel: #0d0d1a;
+      --bg-card: #12121f;
+      --bg-elevated: #1a1a2e;
+      --neon-cyan: #00f5ff;
+      --neon-pink: #ff00aa;
+      --neon-purple: #8b5cf6;
+      --neon-blue: #3b82f6;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --text: #e8e8ff;
+      --text-secondary: #9090b0;
+      --text-muted: #505070;
+      --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
+      --glow-pink: 0 0 20px rgba(255, 0, 170, 0.5);
+      --glow-purple: 0 0 20px rgba(139, 92, 246, 0.5);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse at 20% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 245, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 0, 170, 0.05) 0%, transparent 70%);
+    }
+    
+    header {
+      background: linear-gradient(180deg, var(--bg-panel) 0%, transparent 100%);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--glow-cyan);
+      position: relative;
+    }
+    
+    .logo-icon::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border-radius: 10px;
+      z-index: -1;
+      opacity: 0.5;
+      filter: blur(8px);
+    }
+    
+    .logo-text {
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header-right {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    
+    .model-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--neon-green);
+      background: rgba(0, 255, 136, 0.1);
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .model-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon-green);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .btn {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--text);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Rajdhani', sans-serif;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--neon-purple);
+      box-shadow: var(--glow-purple);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(255, 0, 170, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    main {
+      display: grid;
+      grid-template-columns: 300px 1fr 320px;
+      height: calc(100vh - 64px);
+    }
+    
+    .sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid rgba(0, 245, 255, 0.1);
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .sidebar:last-child {
+      border-right: none;
+      border-left: 1px solid rgba(255, 0, 170, 0.1);
+    }
+    
+    .sidebar-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .sidebar-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: linear-gradient(180deg, var(--neon-cyan), transparent);
+      border-radius: 2px;
+    }
+    
+    .template-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .template-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .template-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .template-item:hover {
+      background: var(--bg-elevated);
+      border-color: rgba(0, 245, 255, 0.2);
+    }
+    
+    .template-item:hover::before { opacity: 1; }
+    
+    .template-item.selected {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: var(--neon-purple);
+      box-shadow: inset 0 0 30px rgba(139, 92, 246, 0.1);
+    }
+    
+    .template-item.selected::before { opacity: 1; background: var(--neon-pink); }
+    
+    .template-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-dark);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .template-item.selected .template-icon {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      border: none;
+      box-shadow: var(--glow-pink);
+    }
+    
+    .template-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .template-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-dark);
+      position: relative;
+    }
+    
+    .chat-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 30% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 70% 30%, rgba(0, 245, 255, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .welcome-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+    
+    .welcome-icon {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      margin-bottom: 28px;
+      box-shadow: 
+        0 0 60px rgba(139, 92, 246, 0.4),
+        0 0 100px rgba(0, 245, 255, 0.2);
+      animation: float 4s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .welcome-state h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .welcome-state p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      max-width: 450px;
+      line-height: 1.6;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 16px 20px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      position: relative;
+    }
+    
+    .message.user {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 20px rgba(255, 0, 170, 0.3);
+    }
+    
+    .message.ai {
+      background: var(--bg-card);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(0, 245, 255, 0.2);
+    }
+    
+    .message pre {
+      background: var(--bg-dark);
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      border: 1px solid rgba(0, 245, 255, 0.15);
+    }
+    
+    .message code {
+      background: rgba(0, 245, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      color: var(--neon-cyan);
+    }
+    
+    .input-area {
+      background: var(--bg-panel);
+      border-top: 1px solid rgba(139, 92, 246, 0.2);
+      padding: 20px 30px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .quick-btn {
+      background: var(--bg-card);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Rajdhani', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .quick-btn:hover {
+      border-color: var(--neon-pink);
+      color: var(--neon-pink);
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: 0 0 15px rgba(255, 0, 170, 0.2);
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+    }
+    
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+    
+    .input-wrapper textarea {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: var(--text);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: 'Rajdhani', sans-serif;
+      resize: none;
+      min-height: 50px;
+      max-height: 150px;
+      transition: all 0.3s;
+    }
+    
+    .input-wrapper textarea:focus {
+      outline: none;
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+    }
+    
+    .input-wrapper textarea::placeholder { color: var(--text-muted); }
+    
+    .asset-category {
+      margin-bottom: 12px;
+    }
+    
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 6px;
+      border: 1px solid transparent;
+    }
+    
+    .category-header:hover {
+      background: var(--bg-elevated);
+      border-color: rgba(255, 0, 170, 0.2);
+    }
+    
+    .category-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .category-icon {
+      font-size: 18px;
+      filter: drop-shadow(0 0 4px currentColor);
+    }
+    
+    .category-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .category-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 245, 255, 0.2);
+    }
+    
+    .category-chevron {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-left: 5px solid var(--neon-cyan);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.2s;
+    }
+    
+    .category-header.expanded .category-chevron { transform: rotate(90deg); }
+    
+    .category-items {
+      display: none;
+      padding-left: 12px;
+    }
+    
+    .category-items.show { display: block; }
+    
+    .asset-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-left: 2px solid transparent;
+    }
+    
+    .asset-item:hover {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--text);
+      border-left-color: var(--neon-purple);
+    }
+    
+    .typing-indicator {
+      display: flex;
+      gap: 6px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid rgba(0, 245, 255, 0.2);
+      align-self: flex-start;
+    }
+    
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); box-shadow: 0 0 10px var(--neon-cyan); }
+    }
+    
+    .search-input {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: 'Rajdhani', sans-serif;
+      margin-bottom: 16px;
+      transition: all 0.3s;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--neon-pink);
+      box-shadow: 0 0 15px rgba(255, 0, 170, 0.2);
+    }
+    
+    .search-input::placeholder { color: var(--text-muted); }
+    
+    .user-info {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(180deg, var(--neon-purple), var(--neon-pink)); 
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">G</div>
+      <span class="logo-text">GRUDGEOS AI</span>
+    </div>
+    <div class="header-right">
+      <div class="model-badge">
+        <span class="model-dot"></span>
+        <span id="modelName">Claude Sonnet 4</span>
+      </div>
+      <span class="user-info" id="userDisplay">Not signed in</span>
+      <button class="btn" id="signInBtn" data-testid="button-sign-in">Sign In</button>
+      <a href="/grudgeos" class="btn" data-testid="link-back">Back</a>
+    </div>
+  </header>
+  
+  <main>
+    <div class="sidebar">
+      <div class="sidebar-title">Game Templates</div>
+      <div class="template-list" id="templateList"></div>
+    </div>
+    
+    <div class="chat-area">
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome-state" id="welcomeState">
+          <div class="welcome-icon"><img src="/grudgeos/assets/icons/generated/ai-studio.png" alt="AI" style="width:48px;height:48px;border-radius:12px;"></div>
+          <h2>GRUDGEOS AI ASSISTANT</h2>
+          <p>Generate games, fix code, create NPCs, or get help with any game development task. Powered by free Puter AI.</p>
+        </div>
+      </div>
+      
+      <div class="input-area">
+        <div class="quick-actions">
+          <button class="quick-btn" data-action="generate_game" data-testid="button-generate-game">Generate Game</button>
+          <button class="quick-btn" data-action="fix_code" data-testid="button-fix-code">Fix Code</button>
+          <button class="quick-btn" data-action="explain_code" data-testid="button-explain">Explain</button>
+          <button class="quick-btn" data-action="generate_npc" data-testid="button-npc">Create NPC</button>
+          <button class="quick-btn" data-action="suggest_assets" data-testid="button-assets">Suggest Assets</button>
+        </div>
+        <div class="input-row">
+          <div class="input-wrapper">
+            <textarea id="promptInput" placeholder="Describe what you want to build..." rows="1" data-testid="input-prompt"></textarea>
+          </div>
+          <button class="btn btn-primary" id="sendBtn" data-testid="button-send">Send</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="sidebar-title" style="color: var(--neon-pink)">Asset Library</div>
+      <input type="text" class="search-input" id="assetSearch" placeholder="Search assets..." data-testid="input-asset-search">
+      <div id="assetCategories"></div>
+    </div>
+  </main>
+
+  <script>
+    let user = null;
+    let assets = [];
+    let templates = [];
+    let selectedTemplate = null;
+    let expandedCategories = new Set(['map']);
+    
+    const ICON_BASE = '/grudgeos/assets/icons/generated/';
+    
+    function makeIcon(name, size = 20) {
+      return '<img src="' + ICON_BASE + name + '.png" alt="' + name + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:4px;">';
+    }
+    
+    const templateIcons = {
+      fps_shooter: makeIcon('games-launcher', 24),
+      rpg_adventure: makeIcon('game-editor', 24),
+      racing_game: makeIcon('games-launcher', 24),
+      sandbox_builder: makeIcon('canvas', 24),
+      platformer_2d: makeIcon('game-editor', 24)
+    };
+    
+    const categoryData = {
+      map: { icon: makeIcon('canvas', 16), name: 'Maps' },
+      model: { icon: makeIcon('games-launcher', 16), name: 'Models' },
+      texture: { icon: makeIcon('art-agent', 16), name: 'Textures' },
+      sound: { icon: makeIcon('audio', 16), name: 'Sounds' }
+    };
+    
+    const autoAI = {
+      patterns: {
+        code: /\b(code|function|class|generate|create|build|make|fix|debug|implement|add)\b/i
+      },
+      selectModel(prompt) {
+        return this.patterns.code.test(prompt) ? 'claude-sonnet-4' : 'gpt-4o';
+      }
+    };
+    
+    async function init() {
+      try {
+        user = await puter.auth.getUser();
+        if (user) {
+          document.getElementById('userDisplay').textContent = user.username;
+          document.getElementById('signInBtn').textContent = 'Sign Out';
+        }
+      } catch (e) {}
+      
+      loadTemplates();
+      loadAssets();
+      setupEventListeners();
+    }
+    
+    async function loadTemplates() {
+      try {
+        const res = await fetch('/api/v1/grudgeos/templates');
+        const data = await res.json();
+        if (data.success) {
+          templates = data.data.templates;
+          renderTemplates();
+        }
+      } catch (e) {}
+    }
+    
+    async function loadAssets() {
+      try {
+        const res = await fetch('/api/v1/grudgeos/assets');
+        const data = await res.json();
+        if (data.success) {
+          assets = data.data.assets;
+          renderAssetCategories();
+        }
+      } catch (e) {}
+    }
+    
+    function renderTemplates() {
+      const list = document.getElementById('templateList');
+      list.innerHTML = templates.map(t => `
+        <div class="template-item ${selectedTemplate?.id === t.id ? 'selected' : ''}" data-id="${t.id}">
+          <div class="template-icon">${templateIcons[t.id] || makeIcon('game-editor', 24)}</div>
+          <div class="template-info">
+            <h3>${t.name}</h3>
+            <p>${t.description}</p>
+          </div>
+        </div>
+      `).join('');
+      
+      list.querySelectorAll('.template-item').forEach(item => {
+        item.addEventListener('click', () => selectTemplate(item.dataset.id));
+      });
+    }
+    
+    function selectTemplate(id) {
+      selectedTemplate = templates.find(t => t.id === id);
+      renderTemplates();
+      if (selectedTemplate) {
+        document.getElementById('promptInput').value = selectedTemplate.prompt;
+        document.getElementById('promptInput').focus();
+      }
+    }
+    
+    function renderAssetCategories(filter = '') {
+      const container = document.getElementById('assetCategories');
+      const filtered = filter 
+        ? assets.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()))
+        : assets;
+      
+      const grouped = filtered.reduce((acc, asset) => {
+        if (!acc[asset.type]) acc[asset.type] = [];
+        acc[asset.type].push(asset);
+        return acc;
+      }, {});
+      
+      container.innerHTML = Object.entries(grouped).map(([type, items]) => {
+        const cat = categoryData[type] || { iconLetter: 'FL', name: type };
+        const isExpanded = expandedCategories.has(type);
+        
+        return `
+          <div class="asset-category">
+            <div class="category-header ${isExpanded ? 'expanded' : ''}" data-type="${type}">
+              <div class="category-left">
+                <span class="category-icon">${cat.icon || makeIcon('file-manager', 16)}</span>
+                <span class="category-name">${cat.name}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="category-count">${items.length}</span>
+                <span class="category-chevron"></span>
+              </div>
+            </div>
+            <div class="category-items ${isExpanded ? 'show' : ''}" data-type="${type}">
+              ${items.slice(0, 15).map(item => `
+                <div class="asset-item" data-path="${item.path}">
+                  <span>${item.name}</span>
+                </div>
+              `).join('')}
+              ${items.length > 15 ? `<div class="asset-item" style="color: var(--neon-purple);">+${items.length - 15} more</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.querySelectorAll('.category-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const type = header.dataset.type;
+          const items = container.querySelector(`.category-items[data-type="${type}"]`);
+          if (expandedCategories.has(type)) {
+            expandedCategories.delete(type);
+            header.classList.remove('expanded');
+            items.classList.remove('show');
+          } else {
+            expandedCategories.add(type);
+            header.classList.add('expanded');
+            items.classList.add('show');
+          }
+        });
+      });
+      
+      container.querySelectorAll('.asset-item[data-path]').forEach(item => {
+        item.addEventListener('click', () => {
+          const input = document.getElementById('promptInput');
+          input.value += (input.value ? '\n' : '') + `Use asset: ${item.dataset.path}`;
+          input.focus();
+        });
+      });
+    }
+    
+    function setupEventListeners() {
+      document.getElementById('signInBtn').addEventListener('click', async () => {
+        if (user) {
+          await puter.auth.signOut();
+          user = null;
+          document.getElementById('userDisplay').textContent = 'Not signed in';
+          document.getElementById('signInBtn').textContent = 'Sign In';
+        } else {
+          try {
+            await puter.auth.signIn();
+            user = await puter.auth.getUser();
+            document.getElementById('userDisplay').textContent = user.username;
+            document.getElementById('signInBtn').textContent = 'Sign Out';
+          } catch (e) {}
+        }
+      });
+      
+      document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prompts = {
+            generate_game: 'Create a 3D game with player movement and scoring',
+            fix_code: 'Fix this code:\n\n// Paste your code here',
+            explain_code: 'Explain how this works:\n\n// Paste code here',
+            suggest_assets: 'Suggest assets for a ',
+            generate_npc: 'Create an NPC with AI behavior for a '
+          };
+          document.getElementById('promptInput').value = prompts[btn.dataset.action] || '';
+          document.getElementById('promptInput').focus();
+        });
+      });
+      
+      document.getElementById('assetSearch').addEventListener('input', (e) => {
+        renderAssetCategories(e.target.value);
+      });
+      
+      document.getElementById('sendBtn').addEventListener('click', sendMessage);
+      document.getElementById('promptInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      document.getElementById('promptInput').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+      });
+    }
+    
+    async function sendMessage() {
+      const input = document.getElementById('promptInput');
+      const prompt = input.value.trim();
+      if (!prompt) return;
+      
+      input.value = '';
+      input.style.height = 'auto';
+      
+      const welcome = document.getElementById('welcomeState');
+      if (welcome) welcome.remove();
+      
+      addMessage(prompt, 'user');
+      showTyping();
+      
+      const model = autoAI.selectModel(prompt);
+      document.getElementById('modelName').textContent = model === 'claude-sonnet-4' ? 'Claude Sonnet 4' : 'GPT-4o';
+      
+      try {
+        const taskRes = await fetch('/api/v1/grudgeos/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            task: detectTask(prompt),
+            prompt,
+            context: { gameType: selectedTemplate?.gameType, language: 'javascript' }
+          })
+        });
+        
+        const taskData = await taskRes.json();
+        
+        if (taskData.success) {
+          const { systemPrompt, userPrompt, suggestedModel } = taskData.data;
+          
+          const response = await puter.ai.chat([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ], { model: suggestedModel || model });
+          
+          hideTyping();
+          
+          let content = response?.message?.content || 'Could not generate response.';
+          if (Array.isArray(content)) content = content.map(c => c.text || c).join('\n');
+          
+          addMessage(formatResponse(content), 'ai');
+        } else {
+          hideTyping();
+          addMessage('Error: ' + (taskData.error?.message || 'Request failed'), 'ai');
+        }
+      } catch (e) {
+        hideTyping();
+        addMessage(user ? 'Error: ' + e.message : 'Please sign in to use GrudgeOS AI.', 'ai');
+      }
+    }
+    
+    function detectTask(prompt) {
+      const lower = prompt.toLowerCase();
+      if (/fix|debug|error|bug/.test(lower)) return 'fix_code';
+      if (/explain|what|how|why/.test(lower)) return 'explain_code';
+      if (/suggest|recommend|asset/.test(lower)) return 'suggest_assets';
+      if (/npc|character|enemy/.test(lower)) return 'generate_npc';
+      if (/quest|mission/.test(lower)) return 'generate_quest';
+      if (/optimize|performance/.test(lower)) return 'optimize_code';
+      if (/scene|environment/.test(lower)) return 'generate_scene';
+      return 'generate_code';
+    }
+    
+    function formatResponse(text) {
+      return text
+        .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+    
+    function addMessage(content, type) {
+      const container = document.getElementById('chatMessages');
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.innerHTML = content;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    function showTyping() {
+      const container = document.getElementById('chatMessages');
+      const typing = document.createElement('div');
+      typing.className = 'typing-indicator';
+      typing.id = 'typingIndicator';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+      container.appendChild(typing);
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    function hideTyping() {
+      document.getElementById('typingIndicator')?.remove();
+    }
+    
+    init();
+  </script>
+</body>
+</html>

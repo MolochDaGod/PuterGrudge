@@ -1,0 +1,508 @@
+/**
+ * GrudgeOS Common Styles - Gapps UI Framework
+ * Shared styles for all CloudPilot deployed applications
+ */
+
+/* ============ CSS VARIABLES ============ */
+:root {
+  /* Backgrounds */
+  --gos-bg-dark: #0a0a12;
+  --gos-bg-panel: rgba(13, 13, 26, 0.95);
+  --gos-bg-card: rgba(18, 18, 31, 0.95);
+  --gos-bg-glass: rgba(20, 20, 40, 0.85);
+  --gos-bg-elevated: #1a1a2e;
+  --gos-bg-hover: rgba(139, 92, 246, 0.15);
+  --gos-bg-active: rgba(0, 245, 255, 0.15);
+  
+  /* Neon Colors */
+  --gos-neon-cyan: #00f5ff;
+  --gos-neon-pink: #ff00aa;
+  --gos-neon-purple: #8b5cf6;
+  --gos-neon-blue: #3b82f6;
+  --gos-neon-green: #00ff88;
+  --gos-neon-orange: #ff6b35;
+  --gos-neon-red: #ff3366;
+  
+  /* Text */
+  --gos-text: #e8e8ff;
+  --gos-text-secondary: #9090b0;
+  --gos-text-muted: #505070;
+  
+  /* Borders */
+  --gos-border: rgba(139, 92, 246, 0.3);
+  --gos-border-active: rgba(0, 245, 255, 0.5);
+  
+  /* Glows */
+  --gos-glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
+  --gos-glow-pink: 0 0 20px rgba(255, 0, 170, 0.5);
+  --gos-glow-purple: 0 0 20px rgba(139, 92, 246, 0.5);
+  --gos-glow-green: 0 0 20px rgba(0, 255, 136, 0.5);
+  
+  /* Spacing */
+  --gos-space-xs: 4px;
+  --gos-space-sm: 8px;
+  --gos-space-md: 16px;
+  --gos-space-lg: 24px;
+  --gos-space-xl: 32px;
+  
+  /* Border Radius */
+  --gos-radius-sm: 4px;
+  --gos-radius-md: 8px;
+  --gos-radius-lg: 12px;
+  --gos-radius-xl: 16px;
+  
+  /* Transitions */
+  --gos-transition-fast: 0.15s ease;
+  --gos-transition-normal: 0.25s ease;
+  --gos-transition-slow: 0.4s ease;
+}
+
+/* ============ RESET & BASE ============ */
+.gos-reset * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============ SYSTEM NAV BAR ============ */
+.gos-system-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: var(--gos-bg-panel);
+  border-bottom: 1px solid var(--gos-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.gos-nav-left,
+.gos-nav-center,
+.gos-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gos-nav-home {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--gos-neon-purple), var(--gos-neon-cyan));
+  border-radius: var(--gos-radius-sm);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--gos-transition-fast);
+}
+
+.gos-nav-home:hover {
+  transform: scale(1.05);
+  box-shadow: var(--gos-glow-purple);
+}
+
+.gos-nav-home img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.gos-nav-title {
+  font-family: 'Orbitron', 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gos-text);
+  letter-spacing: 1px;
+}
+
+.gos-nav-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--gos-text-secondary);
+}
+
+.gos-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gos-neon-green);
+  box-shadow: 0 0 8px var(--gos-neon-green);
+  animation: gos-pulse 2s infinite;
+}
+
+.gos-status-dot.offline {
+  background: var(--gos-neon-red);
+  box-shadow: 0 0 8px var(--gos-neon-red);
+}
+
+@keyframes gos-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============ BODY WITH NAV ============ */
+.gos-has-nav {
+  padding-top: 36px !important;
+}
+
+/* ============ BUTTONS ============ */
+.gos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--gos-text);
+  border: 1px solid var(--gos-border);
+  border-radius: var(--gos-radius-md);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--gos-transition-fast);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gos-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--gos-neon-purple);
+  box-shadow: var(--gos-glow-purple);
+}
+
+.gos-btn-primary {
+  background: linear-gradient(135deg, var(--gos-neon-purple), var(--gos-neon-pink));
+  border: none;
+  color: white;
+}
+
+.gos-btn-primary:hover {
+  box-shadow: 0 0 30px rgba(255, 0, 170, 0.5);
+  transform: translateY(-2px);
+}
+
+.gos-btn-sm {
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.gos-btn-lg {
+  padding: 14px 24px;
+  font-size: 15px;
+}
+
+.gos-btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--gos-radius-sm);
+}
+
+/* ============ CARDS ============ */
+.gos-card {
+  background: var(--gos-bg-card);
+  border: 1px solid var(--gos-border);
+  border-radius: var(--gos-radius-lg);
+  padding: var(--gos-space-md);
+  transition: var(--gos-transition-fast);
+}
+
+.gos-card:hover {
+  border-color: var(--gos-neon-purple);
+}
+
+.gos-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--gos-space-md);
+  padding-bottom: var(--gos-space-sm);
+  border-bottom: 1px solid var(--gos-border);
+}
+
+.gos-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============ BADGES ============ */
+.gos-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gos-badge-cyan {
+  background: rgba(0, 245, 255, 0.15);
+  color: var(--gos-neon-cyan);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.gos-badge-green {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--gos-neon-green);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.gos-badge-purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--gos-neon-purple);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.gos-badge-orange {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--gos-neon-orange);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.gos-badge-pink {
+  background: rgba(255, 0, 170, 0.15);
+  color: var(--gos-neon-pink);
+  border: 1px solid rgba(255, 0, 170, 0.3);
+}
+
+/* ============ INPUTS ============ */
+.gos-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--gos-bg-dark);
+  border: 1px solid var(--gos-border);
+  border-radius: var(--gos-radius-md);
+  color: var(--gos-text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  transition: var(--gos-transition-fast);
+}
+
+.gos-input:focus {
+  outline: none;
+  border-color: var(--gos-neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+}
+
+.gos-input::placeholder {
+  color: var(--gos-text-muted);
+}
+
+.gos-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ============ PANELS ============ */
+.gos-panel {
+  background: var(--gos-bg-panel);
+  border: 1px solid var(--gos-border);
+  border-radius: var(--gos-radius-lg);
+  overflow: hidden;
+}
+
+.gos-panel-header {
+  padding: 12px 16px;
+  background: var(--gos-bg-glass);
+  border-bottom: 1px solid var(--gos-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gos-panel-body {
+  padding: 16px;
+}
+
+/* ============ SCROLLBAR ============ */
+.gos-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.gos-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.gos-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gos-border);
+  border-radius: 3px;
+}
+
+.gos-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gos-neon-purple);
+}
+
+/* ============ GRID LAYOUTS ============ */
+.gos-grid {
+  display: grid;
+  gap: var(--gos-space-md);
+}
+
+.gos-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.gos-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.gos-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .gos-grid-2,
+  .gos-grid-3,
+  .gos-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ FLEX UTILITIES ============ */
+.gos-flex { display: flex; }
+.gos-flex-col { flex-direction: column; }
+.gos-flex-center { align-items: center; justify-content: center; }
+.gos-flex-between { justify-content: space-between; }
+.gos-flex-wrap { flex-wrap: wrap; }
+.gos-gap-sm { gap: var(--gos-space-sm); }
+.gos-gap-md { gap: var(--gos-space-md); }
+.gos-gap-lg { gap: var(--gos-space-lg); }
+
+/* ============ TEXT UTILITIES ============ */
+.gos-text-cyan { color: var(--gos-neon-cyan); }
+.gos-text-pink { color: var(--gos-neon-pink); }
+.gos-text-purple { color: var(--gos-neon-purple); }
+.gos-text-green { color: var(--gos-neon-green); }
+.gos-text-orange { color: var(--gos-neon-orange); }
+.gos-text-muted { color: var(--gos-text-muted); }
+.gos-text-secondary { color: var(--gos-text-secondary); }
+
+/* ============ GRADIENT TEXT ============ */
+.gos-gradient-text {
+  background: linear-gradient(90deg, var(--gos-neon-cyan), var(--gos-neon-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============ LOADING STATES ============ */
+.gos-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.gos-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 18, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gos-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--gos-border);
+  border-top-color: var(--gos-neon-cyan);
+  border-radius: 50%;
+  animation: gos-spin 0.8s linear infinite;
+}
+
+@keyframes gos-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============ TOOLTIPS ============ */
+[data-gos-tooltip] {
+  position: relative;
+}
+
+[data-gos-tooltip]::after {
+  content: attr(data-gos-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: var(--gos-bg-dark);
+  border: 1px solid var(--gos-border);
+  border-radius: var(--gos-radius-sm);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--gos-transition-fast);
+}
+
+[data-gos-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* ============ ANIMATIONS ============ */
+.gos-fade-in {
+  animation: gos-fade-in 0.3s ease;
+}
+
+@keyframes gos-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gos-slide-in {
+  animation: gos-slide-in 0.3s ease;
+}
+
+@keyframes gos-slide-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============ ICON FIXES ============ */
+.gos-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gos-icon img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.gos-icon-sm { width: 16px; height: 16px; }
+.gos-icon-lg { width: 32px; height: 32px; }
+.gos-icon-xl { width: 48px; height: 48px; }
+
+/* ============ FIX OVERFLOW ISSUES ============ */
+.gos-overflow-hidden { overflow: hidden; }
+.gos-overflow-auto { overflow: auto; }
+.gos-overflow-scroll { overflow: scroll; }
+.gos-text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============ Z-INDEX LAYERS ============ */
+.gos-layer-base { z-index: 1; }
+.gos-layer-content { z-index: 10; }
+.gos-layer-panel { z-index: 100; }
+.gos-layer-modal { z-index: 1000; }
+.gos-layer-popup { z-index: 5000; }
+.gos-layer-nav { z-index: 10000; }

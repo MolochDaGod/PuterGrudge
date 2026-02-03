@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compute Pods - GrudgeOS</title>
+  <link rel="stylesheet" href="styles/common.css">
+  <script src="lib/system-nav.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-hover: #1a1a24;
+      --border: rgba(139, 92, 246, 0.2);
+      --neon-purple: #8b5cf6;
+      --neon-cyan: #00f5ff;
+      --neon-green: #00ff88;
+      --neon-orange: #ff6b35;
+      --neon-pink: #ff006e;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .header h1 span {
+      font-size: 24px;
+    }
+    
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .stat {
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+    }
+    
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 10px;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-orange));
+    }
+    
+    .pod-card {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+    
+    .pod-card:hover {
+      border-color: var(--neon-purple);
+    }
+    
+    .pod-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .pod-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .pod-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .pod-icon.node { background: rgba(0, 255, 136, 0.2); }
+    .pod-icon.wasm { background: rgba(139, 92, 246, 0.2); }
+    .pod-icon.browser { background: rgba(0, 245, 255, 0.2); }
+    .pod-icon.deno { background: rgba(255, 107, 53, 0.2); }
+    
+    .status-badge {
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    
+    .status-badge.idle { background: rgba(0, 255, 136, 0.2); color: var(--neon-green); }
+    .status-badge.busy { background: rgba(0, 245, 255, 0.2); color: var(--neon-cyan); animation: pulse 1s infinite; }
+    .status-badge.warming { background: rgba(255, 107, 53, 0.2); color: var(--neon-orange); }
+    .status-badge.terminated { background: rgba(255, 0, 110, 0.2); color: var(--neon-pink); }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .pod-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .job-card {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .job-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .job-id {
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: var(--neon-purple);
+    }
+    
+    .job-type {
+      font-size: 10px;
+      padding: 2px 8px;
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 4px;
+      color: var(--neon-purple);
+    }
+    
+    .job-logs {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-family: 'Consolas', monospace;
+      max-height: 60px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+    
+    .new-job-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .new-job-form input, .new-job-form select {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+    
+    .new-job-form input:focus, .new-job-form select:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state span {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>&#x2601;</span> Compute Pods</h1>
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value" id="podsTotal">0</div>
+        <div class="stat-label">Total Pods</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="podsIdle">0</div>
+        <div class="stat-label">Idle</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="jobsRunning">0</div>
+        <div class="stat-label">Running Jobs</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="jobsCompleted">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="grid">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Compute Pods</div>
+        <button class="btn btn-sm" onclick="createPod()">+ New Pod</button>
+      </div>
+      <div id="podsList"></div>
+    </div>
+    
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Job Queue</div>
+        <button class="btn btn-sm" onclick="refreshJobs()">Refresh</button>
+      </div>
+      <div id="jobsList"></div>
+      
+      <div class="new-job-form">
+        <select id="jobRuntime">
+          <option value="node">Node.js</option>
+          <option value="wasm">WASM</option>
+          <option value="browser">Browser</option>
+        </select>
+        <select id="jobType">
+          <option value="code">Code</option>
+          <option value="ai">AI Task</option>
+          <option value="transform">Transform</option>
+          <option value="build">Build</option>
+        </select>
+        <input type="text" id="jobInput" placeholder="Input data (JSON)">
+        <button class="btn" onclick="submitJob()">Submit Job</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/v1/compute/stats');
+        const { data } = await res.json();
+        
+        document.getElementById('podsTotal').textContent = data.pods.total;
+        document.getElementById('podsIdle').textContent = data.pods.idle;
+        document.getElementById('jobsRunning').textContent = data.jobs.running;
+        document.getElementById('jobsCompleted').textContent = data.jobs.completed;
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      }
+    }
+    
+    async function fetchPods() {
+      try {
+        const res = await fetch('/api/v1/compute/pods');
+        const { data } = await res.json();
+        
+        const list = document.getElementById('podsList');
+        if (data.pods.length === 0) {
+          list.innerHTML = '<div class="empty-state"><span style="display:inline-block;background:linear-gradient(135deg,#00ff88,#3b82f6);width:40px;height:40px;border-radius:10px;line-height:40px;text-align:center;font-weight:bold;color:#fff;font-size:14px;">CP</span><br>No pods available</div>';
+          return;
+        }
+        
+        list.innerHTML = data.pods.map(pod => `
+          <div class="pod-card">
+            <div class="pod-header">
+              <div class="pod-name">
+                <div class="pod-icon ${pod.runtime}">${getRuntimeIcon(pod.runtime)}</div>
+                <span>${pod.name}</span>
+              </div>
+              <span class="status-badge ${pod.status}">${pod.status}</span>
+            </div>
+            <div class="pod-stats">
+              <span>Jobs: ${pod.stats.jobsCompleted}</span>
+              <span>CPU: ${pod.stats.totalCpuMs}ms</span>
+              ${pod.currentJob ? `<span>Current: ${pod.currentJob}</span>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to fetch pods:', e);
+      }
+    }
+    
+    async function fetchJobs() {
+      try {
+        const res = await fetch('/api/v1/compute/jobs');
+        const { data } = await res.json();
+        
+        const list = document.getElementById('jobsList');
+        if (data.jobs.length === 0) {
+          list.innerHTML = '<div class="empty-state"><span style="display:inline-block;background:linear-gradient(135deg,#8b5cf6,#00f5ff);width:40px;height:40px;border-radius:10px;line-height:40px;text-align:center;font-weight:bold;color:#fff;font-size:14px;">JQ</span><br>No jobs in queue</div>';
+          return;
+        }
+        
+        const sortedJobs = data.jobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
+        
+        list.innerHTML = sortedJobs.map(job => `
+          <div class="job-card">
+            <div class="job-header">
+              <span class="job-id">${job.id}</span>
+              <div>
+                <span class="job-type">${job.type}</span>
+                <span class="status-badge ${job.status}" style="margin-left: 8px;">${job.status}</span>
+              </div>
+            </div>
+            <div class="job-logs">${job.logs.slice(-3).join('<br>')}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to fetch jobs:', e);
+      }
+    }
+    
+    function getRuntimeIcon(runtime) {
+      const icons = { node: 'N', wasm: 'W', browser: 'B', deno: 'D' };
+      return icons[runtime] || '?';
+    }
+    
+    async function createPod() {
+      const runtime = prompt('Enter runtime (node, wasm, browser):', 'node');
+      if (!runtime) return;
+      
+      const name = prompt('Enter pod name:', `${runtime} Pod`);
+      if (!name) return;
+      
+      try {
+        await fetch('/api/v1/compute/pods', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, runtime })
+        });
+        refresh();
+      } catch (e) {
+        alert('Failed to create pod');
+      }
+    }
+    
+    async function submitJob() {
+      const runtime = document.getElementById('jobRuntime').value;
+      const type = document.getElementById('jobType').value;
+      const inputStr = document.getElementById('jobInput').value;
+      
+      let input = {};
+      try {
+        if (inputStr) input = JSON.parse(inputStr);
+      } catch (e) {
+        input = { raw: inputStr };
+      }
+      
+      try {
+        await fetch('/api/v1/compute/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ runtime, type, input })
+        });
+        document.getElementById('jobInput').value = '';
+        refresh();
+      } catch (e) {
+        alert('Failed to submit job');
+      }
+    }
+    
+    function refreshJobs() {
+      fetchJobs();
+    }
+    
+    function refresh() {
+      fetchStats();
+      fetchPods();
+      fetchJobs();
+    }
+    
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

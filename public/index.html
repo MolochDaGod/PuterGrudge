@@ -8,7 +8,149 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    // Suppress ALL Puter SDK errors before it loads
+    window.addEventListener('error', e => {
+      if (e.message?.includes('puter') || e.filename?.includes('puter') || e.message?.includes('appInstanceID')) {
+        e.preventDefault(); e.stopPropagation(); return true;
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', e => {
+      const msg = e.reason?.message || String(e.reason) || '';
+      if (msg.includes('puter') || msg.includes('appInstance') || msg.includes('postMessage') || msg.includes('Unexpected token')) {
+        e.preventDefault(); e.stopPropagation();
+      }
+    }, true);
+  </script>
   <script src="https://js.puter.com/v2/"></script>
+  <script>
+    // GrudgeOS Puter Service - Works standalone without app registration
+    window.PuterBoot = {
+      ready: false,
+      user: null,
+      offline: false,
+
+      async init() {
+        // Check if we're in Puter iframe or standalone
+        const inPuter = window.parent !== window && location.hostname.includes('puter');
+
+        if (typeof puter === 'undefined') {
+          console.log('[Puter] SDK not available - offline mode');
+          this.offline = true;
+          this.ready = true;
+          return { offline: true };
+        }
+
+        try {
+          // For standalone apps, just try to get user without other operations
+          this.user = await puter.auth.getUser().catch(() => null);
+
+          // Check if it's a real user (not anonymous/guest)
+          if (this.user && this.user.username && !this.user.username.startsWith('anon')) {
+            console.log('[Puter] Authenticated:', this.user.username);
+          } else {
+            this.user = null;
+            console.log('[Puter] Guest mode - sign in for full features');
+          }
+        } catch (e) {
+          console.log('[Puter] Auth check skipped:', e.message);
+          this.user = null;
+        }
+
+        this.ready = true;
+        this.offline = false;
+        return { user: this.user, ready: true };
+      },
+
+      async signIn() {
+        if (typeof puter === 'undefined') return { error: 'Puter not available' };
+        try {
+          await puter.auth.signIn();
+          this.user = await puter.auth.getUser();
+          return { user: this.user };
+        } catch (e) {
+          return { error: e.message || 'Sign in cancelled' };
+        }
+      },
+
+      async signOut() {
+        try { if (puter?.auth) await puter.auth.signOut(); } catch {}
+        this.user = null;
+      },
+
+      // KV with localStorage fallback (works without app instance)
+      async kvGet(key, defaultValue = null) {
+        const localKey = 'grudge_' + key;
+        // Try localStorage first (always available)
+        try {
+          const local = localStorage.getItem(localKey);
+          if (local) return JSON.parse(local);
+        } catch {}
+        // Try Puter KV if available
+        if (puter?.kv) {
+          try {
+            const val = await puter.kv.get(key);
+            if (val != null) {
+              const parsed = typeof val === 'string' ? JSON.parse(val) : val;
+              localStorage.setItem(localKey, JSON.stringify(parsed)); // Cache locally
+              return parsed;
+            }
+          } catch {}
+        }
+        return defaultValue;
+      },
+
+      async kvSet(key, value) {
+        const localKey = 'grudge_' + key;
+        const serialized = JSON.stringify(value);
+        // Always save to localStorage
+        try { localStorage.setItem(localKey, serialized); } catch {}
+        // Try Puter KV
+        if (puter?.kv) {
+          try { await puter.kv.set(key, serialized); } catch {}
+        }
+        return true;
+      },
+
+      async kvDel(key) {
+        try { localStorage.removeItem('grudge_' + key); } catch {}
+        if (puter?.kv) try { await puter.kv.del(key); } catch {}
+      },
+
+      // AI chat (requires Puter)
+      async chat(prompt, opts = {}) {
+        if (!puter?.ai) return '[Offline] Sign in to Puter for AI features';
+        try {
+          const model = opts.model || 'gpt-4o-mini';
+          const msgs = Array.isArray(prompt) ? prompt : [{ role: 'user', content: prompt }];
+          if (opts.system) msgs.unshift({ role: 'system', content: opts.system });
+          const res = await puter.ai.chat(msgs, { model });
+          return typeof res === 'string' ? res : res?.message?.content || res?.content || String(res);
+        } catch (e) {
+          return `[Error] ${e.message}`;
+        }
+      },
+
+      // FS operations with error handling
+      async readDir(path = '/') {
+        if (!puter?.fs) return [];
+        try { return await puter.fs.readdir(path); } catch { return []; }
+      },
+
+      async writeFile(path, content) {
+        if (!puter?.fs) return false;
+        try { await puter.fs.write(path, content, { createMissingParents: true }); return true; } catch { return false; }
+      },
+
+      async readFile(path) {
+        if (!puter?.fs) return null;
+        try { return await puter.fs.read(path); } catch { return null; }
+      }
+    };
+
+    // Initialize immediately
+    PuterBoot.init().then(() => console.log('[Puter] Ready'));
+  </script>
   <style>
     :root {
       --bg-primary: #0a0e17;

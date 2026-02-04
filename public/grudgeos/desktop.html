@@ -4,20 +4,131 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GrudgeOS Desktop</title>
+  <script>
+    // Suppress ALL Puter SDK errors before loading
+    window.addEventListener('error', e => {
+      const msg = e.message || '';
+      if (msg.includes('puter') || msg.includes('appInstance') || msg.includes('postMessage') || e.filename?.includes('puter')) {
+        e.preventDefault(); e.stopPropagation(); return true;
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', e => {
+      const msg = e.reason?.message || String(e.reason) || '';
+      if (msg.includes('puter') || msg.includes('appInstance') || msg.includes('postMessage') || msg.includes('Unexpected token') || msg.includes('readdir')) {
+        e.preventDefault(); e.stopPropagation();
+      }
+    }, true);
+  </script>
   <script src="https://js.puter.com/v2/"></script>
   <script>
-    // Suppress Puter SDK internal JSON parsing errors (benign - occurs when SDK polls unavailable services)
-    window.addEventListener('unhandledrejection', function(event) {
-      if (event.reason && event.reason.message && event.reason.message.includes("Unexpected token '<'")) {
-        event.preventDefault();
-      }
-    });
-    window.addEventListener('error', function(event) {
-      if (event.message && event.message.includes("Unexpected token '<'")) {
-        event.preventDefault();
+    // GrudgeID - Unified Identity System for GrudgeOS
+    window.GrudgeID = {
+      user: null,
+      ready: false,
+      listeners: [],
+
+      async init() {
+        if (typeof puter === 'undefined') {
+          console.log('[GrudgeID] Offline mode');
+          this.ready = true;
+          this._notify();
+          return { offline: true };
+        }
+
+        try {
+          this.user = await puter.auth.getUser().catch(() => null);
+          if (this.user?.username?.startsWith('anon')) this.user = null;
+          console.log('[GrudgeID] Ready:', this.user?.username || 'Guest');
+        } catch (e) {
+          console.log('[GrudgeID] Auth skipped:', e.message);
+        }
+
+        this.ready = true;
+        this._notify();
+        return { user: this.user, ready: true };
+      },
+
+      async signIn() {
+        if (typeof puter === 'undefined') return { error: 'Offline' };
+        try {
+          await puter.auth.signIn();
+          this.user = await puter.auth.getUser();
+          this._notify();
+          return { user: this.user };
+        } catch (e) {
+          return { error: e.message || 'Cancelled' };
+        }
+      },
+
+      async signOut() {
+        try { if (puter?.auth) await puter.auth.signOut(); } catch {}
+        this.user = null;
+        this._notify();
+      },
+
+      onAuthChange(cb) {
+        this.listeners.push(cb);
+        cb({ user: this.user, ready: this.ready });
+        return () => { this.listeners = this.listeners.filter(l => l !== cb); };
+      },
+
+      _notify() {
+        this.listeners.forEach(cb => { try { cb({ user: this.user, ready: this.ready }); } catch {} });
+      },
+
+      // KV Storage with localStorage fallback
+      async kvGet(key, def = null) {
+        const lk = 'grudge_' + key;
+        try { const l = localStorage.getItem(lk); if (l) return JSON.parse(l); } catch {}
+        if (puter?.kv) try {
+          const v = await puter.kv.get(key);
+          if (v != null) { const p = typeof v === 'string' ? JSON.parse(v) : v; localStorage.setItem(lk, JSON.stringify(p)); return p; }
+        } catch {}
+        return def;
+      },
+
+      async kvSet(key, value) {
+        const lk = 'grudge_' + key, s = JSON.stringify(value);
+        try { localStorage.setItem(lk, s); } catch {}
+        if (puter?.kv) try { await puter.kv.set(key, s); } catch {}
         return true;
+      },
+
+      async kvDel(key) {
+        try { localStorage.removeItem('grudge_' + key); } catch {}
+        if (puter?.kv) try { await puter.kv.del(key); } catch {}
+      },
+
+      // AI Chat
+      async chat(prompt, opts = {}) {
+        if (!puter?.ai) return '[Offline] Sign in to Puter for AI';
+        try {
+          const model = opts.model || 'gpt-4o-mini';
+          const msgs = Array.isArray(prompt) ? prompt : [{ role: 'user', content: prompt }];
+          if (opts.system) msgs.unshift({ role: 'system', content: opts.system });
+          const r = await puter.ai.chat(msgs, { model });
+          return typeof r === 'string' ? r : r?.message?.content || r?.content || String(r);
+        } catch (e) { return `[Error] ${e.message}`; }
+      },
+
+      // FS Operations
+      async readDir(path = '/') {
+        if (!puter?.fs) return [];
+        try { return await puter.fs.readdir(path); } catch { return []; }
+      },
+
+      // Deploy to Puter.site
+      async deploy(subdomain, source) {
+        if (!puter?.hosting) return { error: 'Hosting unavailable' };
+        try {
+          await puter.hosting.create(subdomain, source);
+          return { url: `https://${subdomain}.puter.site` };
+        } catch (e) { return { error: e.message }; }
       }
-    });
+    };
+
+    // Auto-init
+    GrudgeID.init();
   </script>
   <script src="lib/icon-generator.js"></script>
   <script src="lib/agent-registry.js"></script>
@@ -9710,22 +9821,50 @@ function renderParticles(particles) {
     
     // ============ 3D STUDIO UI ============
     let studio3dVisualizer = null;
-    
+
     async function initStudio3D() {
       const canvas = document.getElementById('webgl-canvas');
-      if (!canvas) return;
-      
-      canvas.width = canvas.clientWidth || 600;
-      canvas.height = canvas.clientHeight || 400;
-      
-      studio3dVisualizer = new WebGLVisualizer('webgl-canvas');
-      await studio3dVisualizer.initialize(canvas);
-      studio3dVisualizer.startAnimation();
-      
-      // Auto-load agents visualization so it's not blank
-      const agents = ['orchestrator', 'code-agent', 'art-agent', 'analyst', 'lua-agent', 'network-agent'];
-      studio3dVisualizer.visualizeAgents(agents);
-      updateSceneInfo();
+      if (!canvas) {
+        console.warn('[Studio3D] Canvas not found');
+        return;
+      }
+
+      // Ensure canvas has proper dimensions
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth || 600;
+        canvas.height = parent.clientHeight || 400;
+      } else {
+        canvas.width = canvas.clientWidth || 600;
+        canvas.height = canvas.clientHeight || 400;
+      }
+
+      // Check if WebGLVisualizer is available
+      if (typeof WebGLVisualizer === 'undefined') {
+        console.error('[Studio3D] WebGLVisualizer not loaded');
+        return;
+      }
+
+      try {
+        studio3dVisualizer = new WebGLVisualizer('webgl-canvas');
+        const success = await studio3dVisualizer.initialize(canvas);
+
+        if (!success) {
+          console.warn('[Studio3D] WebGL initialization failed - WebGL may not be supported');
+          return;
+        }
+
+        studio3dVisualizer.startAnimation();
+
+        // Auto-load agents visualization so it's not blank
+        const agents = ['orchestrator', 'code-agent', 'art-agent', 'analyst', 'lua-agent', 'network-agent'];
+        studio3dVisualizer.visualizeAgents(agents);
+        updateSceneInfo();
+
+        console.log('[Studio3D] Initialized successfully');
+      } catch (error) {
+        console.error('[Studio3D] Initialization error:', error);
+      }
     }
     
     function updateSceneInfo() {
@@ -10243,6 +10382,14 @@ function renderParticles(particles) {
   <script src="lib/grudge-channels.js"></script>
   <script src="lib/channel-ui.js"></script>
   <script src="lib/system-monitor.js"></script>
+  <script>
+    // Initialize GrudChat service globally
+    window.grudChat = new GrudChatService({
+      userName: 'GrudgeUser',
+      userId: 'user_' + Date.now()
+    });
+    console.log('[GrudgeOS] GrudChat service initialized');
+  </script>
   <script>
     (function initGrudgeCloudSystem() {
       let retryCount = 0;

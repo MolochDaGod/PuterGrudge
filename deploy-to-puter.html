@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deploy to Puter</title>
+  <!-- Error suppression BEFORE Puter SDK -->
+  <script>
+    (function(){
+      const suppress = msg => msg && (
+        msg.includes('appInstance') || msg.includes('postMessage') ||
+        msg.includes('Unexpected token') || msg.includes('readdir') ||
+        (msg.includes('puter') && msg.includes('undefined'))
+      );
+      window.addEventListener('error', e => { if (suppress(e.message)) { e.preventDefault(); return true; } }, true);
+      window.addEventListener('unhandledrejection', e => {
+        if (suppress(e.reason?.message || String(e.reason))) e.preventDefault();
+      }, true);
+    })();
+  </script>
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; padding: 20px; max-width: 1200px; margin: 0 auto; }
+    h1 { color: #00f5ff; margin-bottom: 10px; }
+    .subtitle { color: #888; margin-bottom: 30px; }
+    .status { padding: 12px; border-radius: 8px; margin: 10px 0; }
+    .success { background: rgba(0,255,100,0.1); border: 1px solid #00ff64; color: #00ff64; }
+    .error { background: rgba(255,50,50,0.1); border: 1px solid #ff3333; color: #ff6666; }
+    .info { background: rgba(0,150,255,0.1); border: 1px solid #0096ff; color: #66c8ff; }
+    .pending { background: rgba(255,200,0,0.1); border: 1px solid #ffc800; color: #ffd54f; }
+    button { background: linear-gradient(135deg, #00f5ff, #0077ff); border: none; padding: 12px 24px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; margin: 5px; font-size: 14px; transition: transform 0.2s; }
+    button:hover { transform: translateY(-2px); }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+    .card { background: rgba(20,20,40,0.8); border: 1px solid #333; border-radius: 12px; padding: 16px; }
+    .card h3 { color: #00f5ff; margin: 0 0 8px 0; font-size: 16px; }
+    .card p { color: #888; font-size: 13px; margin: 0 0 12px 0; }
+    .card a { color: #00f5ff; text-decoration: none; }
+    .card a:hover { text-decoration: underline; }
+    #log { background: #111; border: 1px solid #333; border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.6; }
+    .log-entry { margin: 4px 0; }
+    .log-success { color: #00ff64; }
+    .log-error { color: #ff6666; }
+    .log-info { color: #66c8ff; }
+    .user-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,245,255,0.1); border: 1px solid #00f5ff; padding: 8px 16px; border-radius: 20px; margin-bottom: 20px; }
+    .user-badge .avatar { width: 32px; height: 32px; border-radius: 50%; background: #00f5ff; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; }
+  </style>
+</head>
+<body>
+  <h1>🚀 Deploy GrudgeOS to Puter</h1>
+  <p class="subtitle">Deploy all apps, games, and systems to *.puter.site</p>
+  
+  <div id="user-status" class="status pending">Checking authentication...</div>
+  
+  <div style="margin: 20px 0;">
+    <button id="btn-login" onclick="login()" disabled>Sign In to Puter</button>
+    <button id="btn-deploy-all" onclick="deployAll()" disabled>🚀 Deploy All Apps</button>
+  </div>
+  
+  <h2>📦 Apps to Deploy</h2>
+  <div class="grid" id="apps-grid"></div>
+  
+  <h2>📝 Deployment Log</h2>
+  <div id="log"></div>
+
+  <script>
+    const APPS = [
+      { id: 'grudgeos', name: 'GrudgeOS Desktop', desc: 'Main OS with all gapps', path: '/grudgeos', indexFile: 'desktop.html' },
+      { id: 'grudge-engine', name: 'Grudge Engine', desc: '3D game engine', path: '/grudgeos/gapps/grudge-engine', indexFile: 'index.html' },
+      { id: 'grudge-chat', name: 'GrudChat', desc: 'Discord-like chat system', path: '/grudgeos', indexFile: 'desktop.html' },
+      { id: 'grudge-studio', name: 'Grudge Studio', desc: 'AI-powered IDE', path: '/', indexFile: 'index.html' },
+    ];
+    
+    let user = null;
+    const deployedApps = {};
+
+    function log(msg, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateStatus(msg, type) {
+      const el = document.getElementById('user-status');
+      el.className = `status ${type}`;
+      el.innerHTML = msg;
+    }
+
+    function renderApps() {
+      const grid = document.getElementById('apps-grid');
+      grid.innerHTML = APPS.map(app => `
+        <div class="card" id="card-${app.id}">
+          <h3>${app.name}</h3>
+          <p>${app.desc}</p>
+          ${deployedApps[app.id] ? `<a href="${deployedApps[app.id]}" target="_blank">🔗 ${deployedApps[app.id]}</a>` : '<span style="color:#666">Not deployed</span>'}
+          <div style="margin-top:12px">
+            <button onclick="deployApp('${app.id}')" ${!user ? 'disabled' : ''}>Deploy ${app.name}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Wait for Puter SDK
+    async function waitForPuter(timeout = 5000) {
+      const start = Date.now();
+      while (typeof puter === 'undefined' && Date.now() - start < timeout) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return typeof puter !== 'undefined';
+    }
+
+    async function checkAuth() {
+      const puterReady = await waitForPuter();
+      if (!puterReady) {
+        updateStatus('Puter SDK not loaded. Please refresh.', 'error');
+        log('Puter SDK not available', 'error');
+        return;
+      }
+
+      try {
+        // Get user with timeout
+        user = await Promise.race([
+          puter.auth.getUser(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000))
+        ]).catch(() => null);
+
+        if (user && user.username && !user.username.startsWith('anon') && !user.username.includes('anonymous')) {
+          updateStatus(`<div class="user-badge"><div class="avatar">${user.username[0].toUpperCase()}</div><span>Logged in as <strong>${user.username}</strong></span></div>`, 'success');
+          document.getElementById('btn-login').textContent = 'Logged In ✓';
+          document.getElementById('btn-deploy-all').disabled = false;
+          log(`Authenticated as ${user.username}`, 'success');
+        } else {
+          user = null;
+          updateStatus('Not signed in - click "Sign In to Puter" to deploy', 'pending');
+          document.getElementById('btn-login').disabled = false;
+          log('Not authenticated - please sign in', 'info');
+        }
+      } catch (e) {
+        console.error('Auth check error:', e);
+        user = null;
+        updateStatus('Click "Sign In to Puter" to authenticate', 'info');
+        document.getElementById('btn-login').disabled = false;
+        log(`Auth check: ${e.message}`, 'error');
+      }
+      renderApps();
+    }
+
+    async function login() {
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        log('Opening Puter sign-in...', 'info');
+        updateStatus('Signing in... (check for popup)', 'pending');
+
+        // signIn() opens the Puter login popup
+        await puter.auth.signIn();
+
+        // Get user after sign-in
+        user = await puter.auth.getUser();
+
+        if (user && !user.username?.startsWith('anon')) {
+          log(`Sign-in successful: ${user.username}`, 'success');
+          await checkAuth();
+        } else {
+          user = null;
+          log('Sign-in cancelled or returned guest', 'info');
+          updateStatus('Sign-in cancelled. Try again.', 'pending');
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Puter';
+        }
+      } catch (e) {
+        console.error('Login error:', e);
+        const msg = e.message || String(e);
+
+        if (msg.includes('cancel') || msg.includes('closed')) {
+          log('Sign-in cancelled by user', 'info');
+          updateStatus('Sign-in cancelled', 'pending');
+        } else if (msg.includes('popup') || msg.includes('blocked')) {
+          log('Popup blocked! Allow popups for this site.', 'error');
+          updateStatus('Popup blocked! Please allow popups.', 'error');
+        } else {
+          log(`Login error: ${msg}`, 'error');
+          updateStatus(`Login failed: ${msg}`, 'error');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Puter';
+      }
+    }
+
+    async function deployApp(appId) {
+      const app = APPS.find(a => a.id === appId);
+      if (!app) return;
+      
+      log(`Deploying ${app.name}...`, 'info');
+      
+      try {
+        // For GrudgeOS we deploy the full directory
+        const subdomain = appId.replace(/[^a-z0-9-]/g, '');
+        
+        // Use puter.hosting.create to deploy
+        const result = await puter.hosting.create(subdomain, `./public${app.path}`);
+        
+        const url = `https://${subdomain}.puter.site`;
+        deployedApps[appId] = url;
+        
+        log(`✅ ${app.name} deployed to ${url}`, 'success');
+        renderApps();
+        return url;
+      } catch (e) {
+        log(`❌ Failed to deploy ${app.name}: ${e.message}`, 'error');
+        
+        // Try alternative approach
+        try {
+          log(`Trying direct file upload for ${app.name}...`, 'info');
+          const subdomain = appId.replace(/[^a-z0-9-]/g, '');
+          
+          // Create a simple redirect page for now
+          const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://puter-monitor-ai.onrender.com${app.path}/${app.indexFile}"><title>${app.name}</title></head><body><p>Redirecting to ${app.name}...</p></body></html>`;
+          
+          await puter.fs.write(`/${subdomain}/index.html`, html, { createMissingParents: true });
+          const result = await puter.hosting.create(subdomain, `/${subdomain}`);
+          
+          const url = `https://${subdomain}.puter.site`;
+          deployedApps[appId] = url;
+          log(`✅ ${app.name} redirect deployed to ${url}`, 'success');
+          renderApps();
+        } catch (e2) {
+          log(`❌ Fallback also failed: ${e2.message}`, 'error');
+        }
+      }
+    }
+
+    async function deployAll() {
+      log('Starting deployment of all apps...', 'info');
+      for (const app of APPS) {
+        await deployApp(app.id);
+        await new Promise(r => setTimeout(r, 1000)); // Rate limit
+      }
+      log('🎉 All deployments complete!', 'success');
+    }
+
+    // Initialize
+    checkAuth();
+    log('Puter Deployer initialized', 'info');
+  </script>
+</body>
+</html>
+

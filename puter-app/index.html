@@ -10,12 +10,15 @@
       const suppress = msg => msg && (
         msg.includes('appInstance') || msg.includes('postMessage') ||
         msg.includes('Unexpected token') || msg.includes('readdir') ||
+        msg.includes('show_toolbar') || msg.includes('OrbitControls') ||
         (msg.includes('puter') && msg.includes('undefined'))
       );
       window.addEventListener('error', e => { if (suppress(e.message)) { e.preventDefault(); return true; } }, true);
       window.addEventListener('unhandledrejection', e => {
         if (suppress(e.reason?.message || String(e.reason))) e.preventDefault();
       }, true);
+      // Stub for Puter toolbar
+      window.show_toolbar = window.show_toolbar || function(){};
     })();
   </script>
   <script src="https://js.puter.com/v2/"></script>

@@ -4,14 +4,32 @@ class PuterAuthService {
     this.isAuthenticated = false;
     this.isOnline = false;
     this.listeners = [];
+    this._initPromise = null;
   }
 
   hasPuter() {
     return typeof puter !== 'undefined';
   }
 
+  // Wait for Puter SDK with timeout
+  async _waitForPuter(timeout = 5000) {
+    const start = Date.now();
+    while (!this.hasPuter() && Date.now() - start < timeout) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return this.hasPuter();
+  }
+
   async init() {
-    if (!this.hasPuter()) {
+    if (this._initPromise) return this._initPromise;
+    this._initPromise = this._doInit();
+    return this._initPromise;
+  }
+
+  async _doInit() {
+    const puterReady = await this._waitForPuter();
+
+    if (!puterReady) {
       console.log('[PuterAuth] Puter SDK not available - offline mode');
       this.isOnline = false;
       this.isAuthenticated = false;
@@ -21,8 +39,18 @@ class PuterAuthService {
     }
 
     try {
-      this.user = await puter.auth.getUser();
-      this.isAuthenticated = !!this.user;
+      // Get user with timeout to avoid hanging
+      this.user = await Promise.race([
+        puter.auth.getUser(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000))
+      ]).catch(() => null);
+
+      // Check if it's a real user (not anonymous)
+      if (this.user?.username?.startsWith('anon')) {
+        this.user = null;
+      }
+
+      this.isAuthenticated = !!this.user && !this.user.username?.startsWith('anon');
       this.isOnline = true;
       console.log('[PuterAuth] Initialized:', this.isAuthenticated ? `Logged in as ${this.user.username}` : 'Guest mode');
       this.notifyListeners();
@@ -38,49 +66,53 @@ class PuterAuthService {
 
   async login() {
     if (!this.hasPuter()) {
-      return { success: false, error: 'Puter SDK not available' };
+      return { success: false, error: 'Puter not available. Please visit puter.com' };
     }
 
     try {
+      console.log('[PuterAuth] Starting sign-in...');
       await puter.auth.signIn();
       this.user = await puter.auth.getUser();
+
+      // Check if sign-in was successful (not anonymous)
+      if (this.user?.username?.startsWith('anon')) {
+        this.user = null;
+        this.isAuthenticated = false;
+        console.log('[PuterAuth] Sign-in cancelled');
+        return { success: false, error: 'Sign-in was cancelled' };
+      }
+
       this.isAuthenticated = !!this.user;
       this.isOnline = true;
       console.log('[PuterAuth] Login successful:', this.user?.username);
       this.notifyListeners();
       return { success: true, user: this.user };
     } catch (e) {
-      console.log('[PuterAuth] Login cancelled or failed:', e.message);
-      return { success: false, error: e.message };
+      console.log('[PuterAuth] Login error:', e.message);
+      const msg = e.message || String(e);
+
+      // Provide specific error messages
+      if (msg.includes('cancel') || msg.includes('closed')) {
+        return { success: false, error: 'Sign-in cancelled' };
+      }
+      if (msg.includes('popup') || msg.includes('blocked')) {
+        return { success: false, error: 'Popup blocked! Please allow popups for this site.' };
+      }
+
+      return { success: false, error: msg || 'Sign-in failed. Please try again.' };
     }
   }
 
   async signup() {
-    if (!this.hasPuter()) {
-      return { success: false, error: 'Puter SDK not available' };
-    }
-
-    try {
-      await puter.auth.signIn();
-      this.user = await puter.auth.getUser();
-      this.isAuthenticated = !!this.user;
-      this.isOnline = true;
-      console.log('[PuterAuth] Signup/Login successful:', this.user?.username);
-      this.notifyListeners();
-      return { success: true, user: this.user };
-    } catch (e) {
-      console.log('[PuterAuth] Signup cancelled or failed:', e.message);
-      return { success: false, error: e.message };
-    }
+    // Puter uses the same flow for signup and login
+    return this.login();
   }
 
   async logout() {
-    if (!this.hasPuter()) {
-      return { success: false, error: 'Puter SDK not available' };
-    }
-
     try {
-      await puter.auth.signOut();
+      if (this.hasPuter()) {
+        await puter.auth.signOut().catch(() => {});
+      }
       this.user = null;
       this.isAuthenticated = false;
       console.log('[PuterAuth] Logged out');
@@ -88,7 +120,11 @@ class PuterAuthService {
       return { success: true };
     } catch (e) {
       console.log('[PuterAuth] Logout error:', e.message);
-      return { success: false, error: e.message };
+      // Still clear local state even if signOut fails
+      this.user = null;
+      this.isAuthenticated = false;
+      this.notifyListeners();
+      return { success: true };
     }
   }
 
@@ -102,17 +138,26 @@ class PuterAuthService {
 
   onAuthChange(callback) {
     this.listeners.push(callback);
+    // Immediately call with current state
+    callback({
+      user: this.user,
+      isAuthenticated: this.isAuthenticated,
+      isOnline: this.isOnline
+    });
     return () => {
       this.listeners = this.listeners.filter(l => l !== callback);
     };
   }
 
   notifyListeners() {
-    this.listeners.forEach(cb => cb({
+    const state = {
       user: this.user,
       isAuthenticated: this.isAuthenticated,
       isOnline: this.isOnline
-    }));
+    };
+    this.listeners.forEach(cb => {
+      try { cb(state); } catch (e) { console.error('[PuterAuth] Listener error:', e); }
+    });
   }
 }
 

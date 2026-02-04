@@ -8,7 +8,8 @@ vite.config.ts.*
 
 # Large files - exclude from git
 *.zip
-attached_assets/
+attached_assets/*.zip
+attached_assets/**/*.zip
 *.bin
 public/grudgeos/models/
 .credentials.json

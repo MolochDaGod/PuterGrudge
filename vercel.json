@@ -5,11 +5,7 @@
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/((?!assets|favicon|manifest).*)",
+      "source": "/((?!api|assets|favicon|manifest).*)",
       "destination": "/index.html"
     }
   ]

@@ -3,9 +3,18 @@
   "buildCommand": "npx vite build",
   "outputDirectory": "dist/public",
   "framework": null,
+  "functions": {
+    "api/index.js": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
     {
-      "source": "/((?!api|assets|favicon|manifest).*)",
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

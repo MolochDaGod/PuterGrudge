@@ -98,9 +98,9 @@
       width: 800, height: 600, content: 'wasmrunner', kind: 'native', status: 'live', category: 'dev',
     },
     studio3d: {
-      id: 'studio3d', name: '3D Studio', iconPath: 'creating',
+      id: 'studio3d', name: '3D Viewer', iconPath: 'creating',
       color: 'linear-gradient(135deg, #ff00aa, #00f5ff)',
-      width: 1000, height: 700, content: 'studio3d', kind: 'native', status: 'live', category: 'create',
+      width: 1100, height: 720, content: 'studio3d', kind: 'native', status: 'live', category: 'create',
     },
     gameeditor: {
       id: 'gameeditor', name: 'Game Editor', iconPath: 'games-launcher',

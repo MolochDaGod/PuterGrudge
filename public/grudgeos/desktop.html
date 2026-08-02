@@ -4836,11 +4836,11 @@
       },
       studio3d: {
         id: 'studio3d',
-        name: '3D Studio',
+        name: '3D Viewer',
         iconPath: 'creating',
         color: 'linear-gradient(135deg, #ff00aa, #00f5ff)',
-        width: 1000,
-        height: 700,
+        width: 1100,
+        height: 720,
         content: 'studio3d'
       },
       wasmrunner: {
@@ -5658,6 +5658,11 @@
           // Also start stats monitor after a brief delay
           setTimeout(() => window.initNetworkTools?.(), 50);
         }
+      }
+
+      // 3D Viewer tabs (Model Viewer / Grudge Engine)
+      if (contentType === 'studio3d') {
+        setTimeout(() => initStudio3DTabs(), 0);
       }
     }
     
@@ -7389,84 +7394,36 @@
             </div>
           `;
         case 'studio3d':
+          // Real Three.js GLB/GLTF viewer (not empty viz stubs)
           return `
-            <div class="studio3d-content" data-testid="studio3d-app">
-              <div class="studio3d-header">
+            <div class="studio3d-content" data-testid="studio3d-app" style="display:flex;flex-direction:column;height:100%;min-height:0;">
+              <div class="studio3d-header" style="flex-shrink:0;">
                 <div class="studio3d-title">
-                  ${makeIconImg('canvas', 24)}
-                  <span>Canvas Studio</span>
+                  ${makeIconImg('creating', 24)}
+                  <span>3D Viewer</span>
                 </div>
               </div>
-              <div class="studio3d-tabs">
-                <button class="studio3d-tab" data-tab="grudge-engine" data-testid="tab-grudge-engine">Grudge Engine</button>
-                <button class="studio3d-tab active" data-tab="viz" data-testid="tab-viz">3D Visualization</button>
-                <button class="studio3d-tab" data-tab="aiconsole" data-testid="tab-aiconsole">AI Console</button>
+              <div class="studio3d-tabs" style="flex-shrink:0;">
+                <button class="studio3d-tab active" data-tab="viewer" data-testid="tab-3d-viewer">Model Viewer</button>
+                <button class="studio3d-tab" data-tab="engine" data-testid="tab-grudge-engine">Grudge Engine</button>
               </div>
-              <div class="studio3d-tab-content" id="studio3d-grudge-engine-panel">
-                <iframe 
-                  src="/grudgeos/gapps/grudge-engine/index.html" 
-                  style="width:100%;height:100%;border:none;background:#0a0a0f;"
-                  data-testid="grudge-engine-iframe"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+              <div class="studio3d-tab-content active" id="studio3d-viewer-panel" style="flex:1;min-height:0;display:flex;">
+                <iframe
+                  src="/grudgeos/3d-viewer.html"
+                  style="width:100%;height:100%;border:none;background:#05050a;flex:1;"
+                  data-testid="studio3d-viewer-iframe"
+                  title="Grudge 3D Viewer"
+                  allow="fullscreen"
                 ></iframe>
               </div>
-              <div class="studio3d-tab-content active" id="studio3d-viz-panel">
-                <div class="studio3d-body" style="flex:1;display:flex;">
-                  <div style="flex:1;display:flex;flex-direction:column;">
-                    <div class="studio3d-controls" style="padding:10px;">
-                      <button class="studio3d-btn" onclick="visualizeAgents3D()" data-testid="btn-viz-agents">Agents</button>
-                      <button class="studio3d-btn" onclick="visualizePods3D()" data-testid="btn-viz-pods">Pods</button>
-                      <button class="studio3d-btn" onclick="visualizeNetwork3D()" data-testid="btn-viz-network">Network</button>
-                    </div>
-                    <canvas id="webgl-canvas" data-testid="webgl-canvas" style="flex:1;"></canvas>
-                  </div>
-                  <div class="studio3d-sidebar">
-                    <h4>Scene Info</h4>
-                    <div class="scene-info" id="scene-info">
-                      <p>Nodes: <span id="node-count">0</span></p>
-                      <p>Edges: <span id="edge-count">0</span></p>
-                      <p>Type: <span id="scene-type">-</span></p>
-                    </div>
-                    <h4>Camera</h4>
-                    <div class="camera-controls">
-                      <button onclick="resetCamera()" data-testid="btn-reset-camera">Reset</button>
-                      <button onclick="zoomIn3D()" data-testid="btn-zoom-in">Zoom In</button>
-                      <button onclick="zoomOut3D()" data-testid="btn-zoom-out">Zoom Out</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="studio3d-tab-content" id="studio3d-aiconsole-panel">
-                <div class="ai-console-content">
-                  <div class="ai-console-main">
-                    <div class="ai-gen-section">
-                      <h4>${makeIconImg('ai-studio', 18)} Text to Image</h4>
-                      <div class="ai-gen-form">
-                        <textarea id="txt2img-prompt" placeholder="Describe the image you want to generate..." data-testid="input-txt2img"></textarea>
-                        <button class="ai-gen-btn" onclick="generateAIImage()" data-testid="btn-gen-image">Generate Image</button>
-                      </div>
-                      <div class="ai-gen-result" id="txt2img-result">
-                        <div class="ai-gen-placeholder">Generated image will appear here</div>
-                      </div>
-                    </div>
-                    <div class="ai-gen-section">
-                      <h4>${makeIconImg('game-editor', 18)} Text to Video</h4>
-                      <div class="ai-gen-form">
-                        <textarea id="txt2vid-prompt" placeholder="Describe the video you want to generate..." data-testid="input-txt2vid"></textarea>
-                        <button class="ai-gen-btn" onclick="generateAIVideo()" data-testid="btn-gen-video">Generate Video</button>
-                      </div>
-                      <div class="ai-gen-result" id="txt2vid-result">
-                        <div class="ai-gen-placeholder">Generated video will appear here</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="ai-console-sidebar">
-                    <h4 style="color:var(--neon-cyan);margin-bottom:16px;">Generated Assets</h4>
-                    <div class="ai-asset-list" id="ai-asset-list">
-                      <div class="ai-gen-placeholder" style="font-size:12px;">No assets generated yet</div>
-                    </div>
-                  </div>
-                </div>
+              <div class="studio3d-tab-content" id="studio3d-engine-panel" style="flex:1;min-height:0;display:none;">
+                <iframe
+                  src="/grudgeos/gapps/grudge-engine/index.html"
+                  style="width:100%;height:100%;border:none;background:#0a0a0f;"
+                  data-testid="grudge-engine-iframe"
+                  title="Grudge Engine"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+                ></iframe>
               </div>
             </div>
           `;
@@ -9958,24 +9915,24 @@ function renderParticles(particles) {
     let generatedAssets = [];
     
     function initStudio3DTabs() {
-      const container = document.querySelector('.studio3d-content');
-      if (!container) return;
-      
-      const tabs = container.querySelectorAll('.studio3d-tab');
-      const panels = container.querySelectorAll('.studio3d-tab-content');
-      
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          const targetTab = tab.dataset.tab;
-          
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          
-          panels.forEach(p => {
-            p.classList.remove('active');
-            if (p.id === `studio3d-${targetTab}-panel`) {
-              p.classList.add('active');
-            }
+      // Support multiple open 3D Viewer windows
+      document.querySelectorAll('.studio3d-content').forEach((container) => {
+        if (container.dataset.tabsBound === '1') return;
+        container.dataset.tabsBound = '1';
+
+        const tabs = container.querySelectorAll('.studio3d-tab');
+        const panels = container.querySelectorAll('.studio3d-tab-content');
+
+        tabs.forEach((tab) => {
+          tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            tabs.forEach((t) => t.classList.remove('active'));
+            tab.classList.add('active');
+            panels.forEach((p) => {
+              const on = p.id === `studio3d-${targetTab}-panel`;
+              p.classList.toggle('active', on);
+              p.style.display = on ? 'flex' : 'none';
+            });
           });
         });
       });

@@ -4845,11 +4845,11 @@
       },
       wasmrunner: {
         id: 'wasmrunner',
-        name: 'WASM Runner',
+        name: 'WASM Kit',
         iconPath: 'wasm-runner',
         color: 'linear-gradient(135deg, #ff6b35, #8b5cf6)',
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 680,
         content: 'wasmrunner'
       },
       fleethub: {
@@ -7446,65 +7446,15 @@
             </div>
           `;
         case 'wasmrunner':
+          // Full GrudgeOS WASM kit — auto-loads best OS modules (math/algo/clamp)
           return `
-            <div class="wasm-content" data-testid="wasm-app">
-              <div class="wasm-header">
-                <div class="wasm-title">
-                  <img src="/grudgeos/assets/icons/generated/wasm-runner.png" alt="WA" style="width:24px;height:24px;border-radius:4px;">
-                  <span>WebAssembly Runner</span>
-                </div>
-                <div class="wasm-status" id="wasm-status">
-                  <span class="status-indicator ready"></span>
-                  <span>Ready</span>
-                </div>
-              </div>
-              <div class="wasm-tabs">
-                <button class="wasm-tab active" data-tab="wasm-modules" data-testid="tab-wasm-modules">Modules</button>
-                <button class="wasm-tab" data-tab="wasm-execute" data-testid="tab-wasm-execute">Execute</button>
-                <button class="wasm-tab" data-tab="wasm-memory" data-testid="tab-wasm-memory">Memory</button>
-              </div>
-              <div class="wasm-body">
-                <div class="wasm-tab-content active" id="wasm-modules-panel">
-                  <div class="wasm-modules-list" id="wasm-modules-list">
-                    <div class="no-modules">No WASM modules loaded</div>
-                  </div>
-                  <div class="wasm-load-section">
-                    <label>Load Module (Base64 or URL)</label>
-                    <input type="text" id="wasm-module-input" placeholder="Paste base64 or enter URL..." data-testid="input-wasm-module">
-                    <button class="wasm-action-btn" onclick="loadWasmModule()" data-testid="btn-load-wasm">Load Module</button>
-                  </div>
-                </div>
-                <div class="wasm-tab-content" id="wasm-execute-panel">
-                  <div class="wasm-execute-form">
-                    <label>Select Module</label>
-                    <select id="wasm-exec-module" data-testid="select-wasm-module">
-                      <option value="">Select module...</option>
-                    </select>
-                    <label>Function</label>
-                    <select id="wasm-exec-fn" data-testid="select-wasm-fn">
-                      <option value="">Select function...</option>
-                    </select>
-                    <label>Arguments (comma separated)</label>
-                    <input type="text" id="wasm-exec-args" placeholder="arg1, arg2, ..." data-testid="input-wasm-args">
-                    <button class="wasm-action-btn" onclick="executeWasmFn()" data-testid="btn-exec-wasm">Execute</button>
-                    <div class="wasm-result" id="wasm-result">
-                      <label>Result:</label>
-                      <pre id="wasm-result-output">-</pre>
-                    </div>
-                  </div>
-                </div>
-                <div class="wasm-tab-content" id="wasm-memory-panel">
-                  <div class="wasm-memory-view">
-                    <label>Memory Inspector</label>
-                    <div class="memory-controls">
-                      <input type="number" id="mem-offset" value="0" min="0" data-testid="input-mem-offset">
-                      <input type="number" id="mem-length" value="256" min="1" max="4096" data-testid="input-mem-length">
-                      <button onclick="inspectMemory()" data-testid="btn-inspect-mem">Inspect</button>
-                    </div>
-                    <pre class="memory-dump" id="memory-dump">No memory to display</pre>
-                  </div>
-                </div>
-              </div>
+            <div class="wasm-content" data-testid="wasm-app" style="display:flex;flex-direction:column;height:100%;min-height:0;">
+              <iframe
+                src="/grudgeos/wasm-runner.html"
+                style="width:100%;height:100%;border:none;flex:1;background:#0a0a12;"
+                title="GrudgeOS WASM Runner"
+                data-testid="wasm-runner-iframe"
+              ></iframe>
             </div>
           `;
         case 'zerotier':

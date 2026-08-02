@@ -94,10 +94,11 @@
       width: 700, height: 550, content: 'snapshots', kind: 'native', status: 'live', category: 'compute',
     },
     wasmrunner: {
-      id: 'wasmrunner', name: 'WASM Runner', iconPath: 'wasm-runner',
+      id: 'wasmrunner', name: 'WASM Kit', iconPath: 'wasm-runner',
       color: 'linear-gradient(135deg, #ff6b35, #8b5cf6)',
-      width: 800, height: 600, content: 'wasmrunner', kind: 'native', status: 'live', category: 'dev',
+      width: 1000, height: 680, content: 'wasmrunner', kind: 'native', status: 'live', category: 'dev',
     },
+
     studio3d: {
       id: 'studio3d', name: '3D Viewer', iconPath: 'creating',
       color: 'linear-gradient(135deg, #ff00aa, #00f5ff)',

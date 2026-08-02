@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WASM Runner — GrudgeOS</title>
+  <link rel="icon" type="image/png" href="/grudgeos/assets/icons/cloudpilot-logo.png" />
+  <script src="/grudgeos/lib/runtime/wasm-runtime.js"></script>
+  <script src="/grudgeos/lib/runtime/wasm-examples.js"></script>
+  <script src="/grudgeos/lib/runtime/wasm-os-kit.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a12; --panel: #12121e; --border: rgba(0,245,255,0.25);
+      --cyan: #00f5ff; --purple: #8b5cf6; --green: #00ff88; --text: #e8e8ff; --muted: #8b8b9b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; overflow: hidden; }
+    #app { display: grid; grid-template-columns: 280px 1fr; height: 100%; }
+    @media (max-width: 800px) { #app { grid-template-columns: 1fr; } #sidebar { max-height: 40%; border-right: none; border-bottom: 1px solid var(--border); } }
+    #sidebar { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+    #main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .head {
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .head h1 { font-size: 14px; color: var(--cyan); font-weight: 700; letter-spacing: 0.04em; }
+    .head .badge {
+      font-size: 10px; padding: 3px 8px; border-radius: 999px;
+      background: rgba(0,255,136,0.12); color: var(--green); border: 1px solid rgba(0,255,136,0.35);
+    }
+    .head .badge.warn { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.35); }
+    .head button, .exec button {
+      border: 1px solid var(--border); background: #141428; color: var(--text);
+      border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+    }
+    .head button.primary, .exec button.primary {
+      background: linear-gradient(135deg, var(--purple), var(--cyan)); color: #061018; border: none; font-weight: 700;
+    }
+    .head button:hover, .exec button:hover { border-color: var(--cyan); }
+    .list { flex: 1; overflow: auto; padding: 8px; }
+    .cat { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; padding: 10px 8px 4px; text-transform: uppercase; }
+    .mod {
+      padding: 10px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; margin-bottom: 4px;
+    }
+    .mod:hover { background: rgba(139,92,246,0.1); }
+    .mod.active { border-color: var(--cyan); background: rgba(0,245,255,0.08); }
+    .mod .name { font-size: 13px; font-weight: 600; }
+    .mod .purpose { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+    .mod .tag {
+      display: inline-block; margin-top: 6px; font-size: 10px; padding: 2px 6px; border-radius: 4px;
+      background: rgba(139,92,246,0.2); color: #c4b5fd;
+    }
+    .mod .tag.os { background: rgba(0,255,136,0.15); color: var(--green); }
+    .body { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    }
+    .card h2 { font-size: 13px; color: var(--cyan); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .exec { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .exec label { font-size: 11px; color: var(--muted); }
+    .exec input, .exec select {
+      background: #0e0e1a; border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 7px 10px; font-size: 13px; min-width: 120px;
+    }
+    .result {
+      font-family: ui-monospace, monospace; font-size: 22px; color: var(--green);
+      padding: 12px; background: #0a0a14; border-radius: 8px; border: 1px solid rgba(0,255,136,0.2);
+    }
+    .log {
+      font-family: ui-monospace, monospace; font-size: 11px; color: #a0a0c0;
+      background: #08080f; border-radius: 8px; padding: 10px; max-height: 180px; overflow: auto;
+      white-space: pre-wrap; line-height: 1.45;
+    }
+    .tests { display: flex; flex-direction: column; gap: 6px; }
+    .test-row {
+      display: flex; gap: 10px; align-items: center; font-size: 12px;
+      padding: 8px 10px; background: #0e0e18; border-radius: 8px;
+    }
+    .test-row.pass { border-left: 3px solid var(--green); }
+    .test-row.fail { border-left: 3px solid #ff6b8a; }
+    .empty { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="head">
+        <h1>WASM Kit</h1>
+        <span class="badge" id="kit-badge">Booting…</span>
+      </div>
+      <div class="list" id="mod-list"><div class="empty">Loading OS modules…</div></div>
+    </aside>
+    <section id="main">
+      <div class="head">
+        <h1 id="title">GrudgeOS WASM Runner</h1>
+        <button type="button" class="primary" id="btn-load-kit">Load OS Kit</button>
+        <button type="button" id="btn-test-all">Test all OS</button>
+        <button type="button" id="btn-run">Run</button>
+        <button type="button" id="btn-test">Test module</button>
+      </div>
+      <div class="body">
+        <div class="card">
+          <h2>Module</h2>
+          <div id="mod-detail" class="empty">Select a module — OS kit loads automatically for GrudgeOS math, algorithms, and utilities.</div>
+        </div>
+        <div class="card">
+          <h2>Execute</h2>
+          <div class="exec">
+            <label>fn</label>
+            <select id="fn-select"></select>
+            <label>args</label>
+            <input id="args-input" type="text" placeholder="1, 2, 3" />
+            <button type="button" class="primary" id="btn-run-2">Run</button>
+          </div>
+          <div style="margin-top:12px" class="result" id="result">—</div>
+        </div>
+        <div class="card">
+          <h2>Tests</h2>
+          <div class="tests" id="tests"><div class="empty">No tests run yet</div></div>
+        </div>
+        <div class="card">
+          <h2>Console</h2>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const listEl = document.getElementById('mod-list');
+    const detailEl = document.getElementById('mod-detail');
+    const resultEl = document.getElementById('result');
+    const testsEl = document.getElementById('tests');
+    const fnSelect = document.getElementById('fn-select');
+    const argsInput = document.getElementById('args-input');
+    const badge = document.getElementById('kit-badge');
+
+    let catalog = [];
+    let selected = null;
+
+    function log(msg) {
+      const t = new Date().toLocaleTimeString();
+      logEl.textContent += `[${t}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function renderList() {
+      const byCat = {};
+      catalog.forEach((m) => {
+        const c = m.category || 'other';
+        if (!byCat[c]) byCat[c] = [];
+        byCat[c].push(m);
+      });
+      const order = ['os-math', 'os-utility', 'os-algo', 'math', 'algorithms', 'utility'];
+      const cats = [...order.filter((c) => byCat[c]), ...Object.keys(byCat).filter((c) => !order.includes(c))];
+
+      listEl.innerHTML = cats.map((c) => {
+        const meta = window.WasmOsKit?.CATEGORIES?.[c] || { label: c, color: '#888' };
+        return `
+          <div class="cat" style="color:${meta.color || 'var(--muted)'}">${meta.label || c}</div>
+          ${byCat[c].map((m) => `
+            <div class="mod ${selected?.id === m.id ? 'active' : ''}" data-id="${m.id}">
+              <div class="name">${m.name}</div>
+              <div class="purpose">${m.purpose || m.description || ''}</div>
+              ${m.os ? '<span class="tag os">OS kit</span>' : '<span class="tag">demo</span>'}
+            </div>
+          `).join('')}
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('.mod').forEach((el) => {
+        el.addEventListener('click', () => selectModule(el.dataset.id));
+      });
+    }
+
+    function selectModule(id) {
+      selected = catalog.find((m) => m.id === id) || null;
+      if (!selected) return;
+      document.getElementById('title').textContent = selected.name;
+      detailEl.innerHTML = `
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${selected.name}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px;">${selected.purpose || selected.description || ''}</div>
+        <div style="font-size:11px;color:var(--cyan);">exports: <code>${(selected.exports || []).join(', ')}</code></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">category: ${selected.category}${selected.os ? ' · OS priority' : ''}</div>
+      `;
+      fnSelect.innerHTML = (selected.exports || []).map((f) => `<option value="${f}">${f}</option>`).join('');
+      argsInput.value = (selected.defaults || selected.testCases?.[0]?.args || []).join(', ');
+      renderList();
+    }
+
+    async function boot() {
+      try {
+        if (!window.wasmRuntime || !window.WasmOsKit) {
+          badge.textContent = 'Missing runtime';
+          badge.classList.add('warn');
+          log('ERROR: wasm runtime or OS kit not loaded');
+          return;
+        }
+        log('Initializing WebAssembly runtime…');
+        await window.wasmRuntime.initialize();
+        log('Loading GrudgeOS WASM kit…');
+        const { loaded, errors, count } = await window.WasmOsKit.loadOsKit();
+        catalog = window.WasmOsKit.getCatalog();
+        badge.textContent = `${count} OS modules ready`;
+        log(`OS kit loaded: ${count} modules`);
+        if (errors.length) {
+          errors.forEach((e) => log(`WARN ${e.id}: ${e.error}`));
+          badge.classList.add('warn');
+        }
+        renderList();
+        // Select clamp as default — most OS-useful
+        selectModule(catalog.find((m) => m.id === 'os_clamp')?.id || catalog[0]?.id);
+        // Quick smoke test suite
+        log('Running OS kit smoke tests…');
+        const suite = await window.WasmOsKit.runAllOsTests();
+        log(`OS tests: ${suite.passed}/${suite.total} passed`);
+        badge.textContent = `${count} OS · tests ${suite.passed}/${suite.total}`;
+        if (suite.passed < suite.total) badge.classList.add('warn');
+      } catch (e) {
+        log('BOOT ERROR: ' + (e.message || e));
+        badge.textContent = 'Boot failed';
+        badge.classList.add('warn');
+      }
+    }
+
+    async function doRun() {
+      if (!selected) return;
+      const fn = fnSelect.value || selected.exports[0];
+      const args = argsInput.value.trim()
+        ? argsInput.value.split(',').map((s) => parseInt(s.trim(), 10))
+        : (selected.defaults || []);
+      try {
+        log(`RUN ${selected.name}.${fn}(${args.join(', ')})`);
+        const out = await window.WasmOsKit.run(selected.id, fn, args);
+        resultEl.textContent = String(out.result);
+        log(`→ ${out.result}`);
+      } catch (e) {
+        resultEl.textContent = 'error';
+        log('ERROR: ' + (e.message || e));
+      }
+    }
+
+    async function doTest() {
+      if (!selected) return;
+      try {
+        const r = await window.WasmOsKit.runTests(selected.id);
+        testsEl.innerHTML = r.cases.map((c) => `
+          <div class="test-row ${c.passed ? 'pass' : 'fail'}">
+            <span>${c.fn}(${(c.args || []).join(', ')})</span>
+            <span style="margin-left:auto;color:var(--muted)">exp ${c.expected}</span>
+            <span>got ${c.actual ?? c.error}</span>
+            <span>${c.passed ? '✓' : '✗'}</span>
+          </div>
+        `).join('') || '<div class="empty">No test cases</div>';
+        log(`TEST ${selected.name}: ${r.passed}/${r.total}`);
+      } catch (e) {
+        log('TEST ERROR: ' + (e.message || e));
+      }
+    }
+
+    document.getElementById('btn-load-kit').addEventListener('click', boot);
+    document.getElementById('btn-run').addEventListener('click', doRun);
+    document.getElementById('btn-run-2').addEventListener('click', doRun);
+    document.getElementById('btn-test').addEventListener('click', doTest);
+    document.getElementById('btn-test-all').addEventListener('click', async () => {
+      const suite = await window.WasmOsKit.runAllOsTests();
+      testsEl.innerHTML = suite.results.map((r) => `
+        <div class="test-row ${r.passed === r.total ? 'pass' : 'fail'}">
+          <span>${r.module}</span>
+          <span style="margin-left:auto">${r.passed}/${r.total}</span>
+        </div>
+      `).join('');
+      log(`ALL OS TESTS: ${suite.passed}/${suite.total}`);
+      badge.textContent = `tests ${suite.passed}/${suite.total}`;
+    });
+
+    // Parent OS can request runs
+    window.addEventListener('message', async (ev) => {
+      const d = ev.data;
+      if (!d || d.type !== 'wasm-os') return;
+      if (d.action === 'run' && d.moduleId) {
+        selectModule(d.moduleId);
+        if (d.args) argsInput.value = d.args.join(',');
+        if (d.fn) fnSelect.value = d.fn;
+        await doRun();
+      }
+      if (d.action === 'reload') boot();
+    });
+
+    boot();
+  </script>
+</body>
+</html>

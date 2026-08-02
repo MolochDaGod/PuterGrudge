@@ -1,13 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { ContextEngine, type UserContext } from '@/services/context/ContextEngine';
+import { waitForPuterAI } from '@/lib/puterAiFallback';
 
-// Declare global puterAI from public/grudgeos/lib/puter-ai-service.js
-// Note: puter is already declared in usePuter.ts
-declare global {
-  interface Window {
-    puterAI: any;
-  }
-}
+// puterAI: full script at /grudgeos/lib/puter-ai-service.js, or TS fallback
 
 export interface AIMessage {
   id: string;
@@ -78,23 +73,15 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const init = async () => {
       try {
-        // Wait for puterAI to be available
-        if (!window.puterAI) {
-          console.warn('[AIContext] PuterAI not available, waiting... - AIContext.tsx:83');
-
-          // Retry every 500ms for up to 5 seconds
-          let retries = 10;
-          while (!window.puterAI && retries > 0) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            retries--;
-          }
-
-          if (!window.puterAI) {
-            throw new Error('PuterAI service not loaded');
-          }
+        // Prefer full puter-ai-service.js; otherwise install TS fallback once Puter SDK is ready
+        const puterAI = await waitForPuterAI(10_000);
+        if (!puterAI) {
+          throw new Error(
+            'Puter AI not available. Allow js.puter.com, or sign in at puter.com and reload.',
+          );
         }
 
-        const success = await window.puterAI.init();
+        const success = await puterAI.init();
 
         // Subscribe to context changes
         contextUnsubscribe.current = ContextEngine.subscribe((context) => {
@@ -109,11 +96,12 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
           initialized: true,
           available: success,
           context: ContextEngine.getContext(),
+          error: success ? null : 'Puter AI SDK loaded but init returned false',
         }));
 
-        console.log('[AIContext] Initialized successfully - AIContext.tsx:114');
+        console.log('[AIContext] Initialized', { available: success });
       } catch (error) {
-        console.error('[AIContext] Initialization failed: - AIContext.tsx:116', error);
+        console.error('[AIContext] Initialization failed', error);
         setState(prev => ({
           ...prev,
           initialized: true,

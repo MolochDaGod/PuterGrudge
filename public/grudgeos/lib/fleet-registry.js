@@ -37,10 +37,11 @@
       width: 900, height: 600, content: 'aistudio', kind: 'native', status: 'live', category: 'ai',
     },
     grudchat: {
-      id: 'grudchat', name: 'GrudChat', iconPath: 'grudge-chat',
-      color: 'linear-gradient(135deg, #8b5cf6, #00f5ff)',
-      width: 900, height: 600, content: 'grudchat', kind: 'native', status: 'live', category: 'comms',
+      id: 'grudchat', name: 'Treaty Chat', iconPath: 'grudge-chat',
+      color: 'linear-gradient(135deg, #e94560, #8b5cf6)',
+      width: 1100, height: 720, content: 'grudchat', kind: 'native', status: 'live', category: 'comms',
     },
+
     agentsquad: {
       id: 'agentsquad', name: 'Agent Squad', iconPath: 'agent-swarm',
       color: 'linear-gradient(135deg, #ff00aa, #8b5cf6)',

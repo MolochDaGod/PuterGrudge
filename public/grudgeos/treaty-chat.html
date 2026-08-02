@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treaty Chat — GrudgeOS</title>
+  <link rel="icon" type="image/png" href="/grudgeos/assets/icons/cloudpilot-logo.png" />
+  <script src="https://js.puter.com/v2/"></script>
+  <script src="/grudgeos/lib/puter-ai-service.js" defer></script>
+  <style>
+    :root {
+      --bg: #0b0b14;
+      --panel: #12121e;
+      --panel2: #181828;
+      --border: rgba(139, 92, 246, 0.28);
+      --cyan: #00f5ff;
+      --purple: #8b5cf6;
+      --pink: #ff00aa;
+      --green: #00ff88;
+      --text: #e8e8ff;
+      --muted: #8b8b9b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+    #app { display: grid; grid-template-columns: 72px 220px 1fr 240px; height: 100%; }
+    @media (max-width: 900px) {
+      #app { grid-template-columns: 56px 1fr; }
+      #channels, #agents { display: none; }
+      #channels.open, #agents.open { display: flex; position: absolute; z-index: 20; top: 0; bottom: 0; }
+      #channels.open { left: 56px; width: 220px; }
+      #agents.open { right: 0; width: 240px; }
+    }
+    .rail {
+      background: #0a0a10; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 0;
+    }
+    .rail .orb {
+      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+      cursor: pointer; font-weight: 800; font-size: 14px; border: 1px solid transparent;
+      transition: border-radius 0.15s, border-color 0.15s;
+    }
+    .rail .orb:hover, .rail .orb.active { border-radius: 12px; border-color: var(--cyan); }
+    .rail .orb.treaty { background: linear-gradient(135deg, #e94560, #8b5cf6); }
+    .rail .orb.os { background: linear-gradient(135deg, #00f5ff, #3b82f6); }
+    .rail .orb.agents { background: linear-gradient(135deg, #8b5cf6, #ff00aa); }
+    #channels, #agents {
+      background: var(--panel); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    #agents { border-right: none; border-left: 1px solid var(--border); }
+    .side-head {
+      padding: 14px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+      color: var(--cyan); border-bottom: 1px solid var(--border); text-transform: uppercase;
+    }
+    .chan-list, .agent-list { flex: 1; overflow: auto; padding: 8px; }
+    .cat { font-size: 10px; color: var(--muted); padding: 10px 8px 4px; letter-spacing: 0.08em; font-weight: 700; }
+    .chan, .agent {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      cursor: pointer; font-size: 13px; color: #b8b8d0;
+    }
+    .chan:hover, .agent:hover, .chan.active { background: rgba(139,92,246,0.15); color: var(--text); }
+    .chan.active { color: var(--cyan); }
+    .chan .hash { color: var(--muted); width: 14px; }
+    .agent .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .agent .dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .agent .dot.busy { background: #fbbf24; }
+    #main { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: linear-gradient(180deg, #12121e, #0e0e18); }
+    #main-head {
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); background: rgba(18,18,31,0.95);
+    }
+    #main-head h2 { font-size: 15px; font-weight: 700; }
+    #main-head .sub { font-size: 11px; color: var(--muted); }
+    #main-head .spacer { flex: 1; }
+    #main-head button {
+      border: 1px solid var(--border); background: #141428; color: var(--text);
+      border-radius: 8px; padding: 6px 10px; font-size: 11px; cursor: pointer;
+    }
+    #main-head button:hover { border-color: var(--cyan); }
+    #msgs { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .msg { display: flex; gap: 12px; max-width: 920px; }
+    .msg .av {
+      width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+      display: grid; place-items: center; font-weight: 800; font-size: 13px;
+    }
+    .msg .body { min-width: 0; }
+    .msg .meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
+    .msg .name { font-weight: 700; font-size: 13px; }
+    .msg .time { font-size: 10px; color: var(--muted); }
+    .msg .text { font-size: 14px; line-height: 1.5; color: #e0e0f0; white-space: pre-wrap; word-break: break-word; }
+    .msg .text code {
+      background: rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 4px; font-size: 12px;
+      font-family: ui-monospace, monospace; color: var(--cyan);
+    }
+    .msg .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .msg .actions button {
+      border: 1px solid var(--border); background: rgba(139,92,246,0.12); color: var(--text);
+      border-radius: 8px; padding: 5px 10px; font-size: 11px; cursor: pointer;
+    }
+    .msg .actions button:hover { border-color: var(--cyan); color: var(--cyan); }
+    .msg.system .text { color: var(--muted); font-style: italic; }
+    #composer {
+      display: flex; flex-direction: column; gap: 8px; padding: 12px 16px;
+      border-top: 1px solid var(--border); background: rgba(18,18,31,0.95);
+    }
+    .hints { font-size: 11px; color: var(--muted); }
+    .hints code { color: var(--cyan); }
+    .row { display: flex; gap: 8px; align-items: flex-end; }
+    #input {
+      flex: 1; min-height: 42px; max-height: 120px; resize: vertical;
+      background: #1a1a2e; border: 1px solid rgba(80,80,112,0.35); border-radius: 10px;
+      color: var(--text); padding: 10px 12px; font-size: 14px; outline: none;
+    }
+    #input:focus { border-color: var(--purple); }
+    #send {
+      padding: 10px 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700;
+      background: linear-gradient(135deg, var(--purple), var(--cyan)); color: #061018;
+    }
+    #send:disabled { opacity: 0.5; cursor: wait; }
+    .typing { font-size: 12px; color: var(--muted); min-height: 16px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="rail">
+      <div class="orb treaty active" title="Treaty Studio" data-view="treaty">T</div>
+      <div class="orb os" title="OS control" data-view="os">OS</div>
+      <div class="orb agents" title="Agents" data-view="agents">AI</div>
+    </div>
+    <aside id="channels">
+      <div class="side-head">Treaty Chat</div>
+      <div class="chan-list" id="chan-list"></div>
+    </aside>
+    <main id="main">
+      <div id="main-head">
+        <div>
+          <h2 id="chan-title"># general</h2>
+          <div class="sub" id="chan-sub">Treaty · agents can chat, edit, create & control the OS</div>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" id="btn-clear">Clear</button>
+        <button type="button" id="btn-help">Help</button>
+      </div>
+      <div id="msgs"></div>
+      <div class="typing" id="typing"></div>
+      <div id="composer">
+        <div class="hints">
+          Try: <code>@code fix login</code> · <code>/open studio3d</code> · <code>/create note "hello"</code> · <code>/edit rename GrudChat→Treaty</code>
+        </div>
+        <div class="row">
+          <textarea id="input" rows="1" placeholder="Message Treaty… @agent or /command"></textarea>
+          <button type="button" id="send">Send</button>
+        </div>
+      </div>
+    </main>
+    <aside id="agents">
+      <div class="side-head">AI Agents</div>
+      <div class="agent-list" id="agent-list"></div>
+    </aside>
+  </div>
+
+  <script>
+    const CHANNELS = [
+      { cat: 'TREATY', items: [
+        { id: 'general', name: 'general', desc: 'Treaty hub — talk with all agents' },
+        { id: 'os-control', name: 'os-control', desc: 'Open / create / edit OS apps' },
+        { id: 'create', name: 'create', desc: 'Scaffold files, notes, deploy drafts' },
+      ]},
+      { cat: 'AGENTS', items: [
+        { id: 'orchestrator', name: 'orchestrator', desc: 'Routes work to the right agent' },
+        { id: 'code', name: 'code', desc: 'Code review, patches, scripts' },
+        { id: 'creator', name: 'creator', desc: 'Assets, UI copy, ideas' },
+        { id: 'editor', name: 'editor', desc: 'Rename, restructure, polish' },
+      ]},
+    ];
+
+    const AGENTS = {
+      orchestrator: {
+        id: 'orchestrator', name: 'Orchestrator', color: '#8b5cf6',
+        system: 'You are Orchestrator on GrudgeOS Treaty Chat. Route tasks, propose /open /create /edit OS commands, keep answers short and actionable.',
+      },
+      code: {
+        id: 'code', name: 'Code', color: '#00ff88',
+        system: 'You are Code agent on GrudgeOS. Help write/edit code, suggest fixes, return snippets in markdown. Prefer small patches. Suggest /open aivm or /open terminal when useful.',
+      },
+      creator: {
+        id: 'creator', name: 'Creator', color: '#00f5ff',
+        system: 'You are Creator agent. Help invent UI, content, and assets for Grudge Studio. Suggest /open studio3d or /open aistudio when relevant.',
+      },
+      editor: {
+        id: 'editor', name: 'Editor', color: '#ff00aa',
+        system: 'You are Editor agent. Help rename, restructure, and polish OS content. Use /edit style suggestions.',
+      },
+    };
+
+    const OS_APPS = [
+      'aivm', 'grudchat', 'agentsquad', 'fleethub', 'pods', 'snapshots', 'studio3d',
+      'wasmrunner', 'grudgecloud', 'aistudio', 'observer', 'gameeditor', 'networktools',
+      'warlords', 'openlauncher', 'forge', 'settings', 'terminal',
+    ];
+
+    const state = {
+      channel: 'general',
+      messages: {}, // channelId -> []
+      busy: false,
+      activeAgent: 'orchestrator',
+    };
+
+    const msgsEl = document.getElementById('msgs');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const typingEl = document.getElementById('typing');
+
+    function kvKey(ch) { return `treaty:msgs:${ch}`; }
+
+    async function loadChannel(ch) {
+      state.channel = ch;
+      document.getElementById('chan-title').textContent = '#' + ch;
+      const meta = CHANNELS.flatMap((c) => c.items).find((i) => i.id === ch);
+      document.getElementById('chan-sub').textContent = meta?.desc || 'Treaty chat';
+      document.querySelectorAll('.chan').forEach((el) => {
+        el.classList.toggle('active', el.dataset.ch === ch);
+      });
+
+      let list = [];
+      try {
+        const raw = localStorage.getItem(kvKey(ch));
+        if (raw) list = JSON.parse(raw);
+        if (window.puter?.kv) {
+          const remote = await puter.kv.get(kvKey(ch));
+          if (remote) {
+            list = typeof remote === 'string' ? JSON.parse(remote) : remote;
+          }
+        }
+      } catch {}
+
+      if (!list.length) {
+        list = [{
+          id: 'welcome',
+          author: 'Treaty',
+          agent: 'orchestrator',
+          role: 'system',
+          content: 'Welcome to Treaty Chat. Agents can talk, open OS apps, create notes, and edit together.\n\nTry @code or /open studio3d',
+          ts: Date.now(),
+        }];
+      }
+      state.messages[ch] = list;
+      renderMessages();
+    }
+
+    async function saveChannel() {
+      const list = state.messages[state.channel] || [];
+      try {
+        localStorage.setItem(kvKey(state.channel), JSON.stringify(list.slice(-200)));
+        if (window.puter?.kv) {
+          await puter.kv.set(kvKey(state.channel), list.slice(-200));
+        }
+      } catch {}
+    }
+
+    function renderChannels() {
+      const root = document.getElementById('chan-list');
+      root.innerHTML = CHANNELS.map((block) => `
+        <div class="cat">${block.cat}</div>
+        ${block.items.map((ch) => `
+          <div class="chan ${ch.id === state.channel ? 'active' : ''}" data-ch="${ch.id}">
+            <span class="hash">#</span><span>${ch.name}</span>
+          </div>
+        `).join('')}
+      `).join('');
+      root.querySelectorAll('.chan').forEach((el) => {
+        el.addEventListener('click', () => loadChannel(el.dataset.ch));
+      });
+    }
+
+    function renderAgents() {
+      const root = document.getElementById('agent-list');
+      root.innerHTML = Object.values(AGENTS).map((a) => `
+        <div class="agent" data-agent="${a.id}">
+          <span class="dot on" style="background:${a.color}"></span>
+          <div>
+            <div style="font-weight:600;color:${a.color}">${a.name}</div>
+            <div style="font-size:11px;color:var(--muted)">@${a.id}</div>
+          </div>
+        </div>
+      `).join('');
+      root.querySelectorAll('.agent').forEach((el) => {
+        el.addEventListener('click', () => {
+          state.activeAgent = el.dataset.agent;
+          inputEl.value = `@${state.activeAgent} `;
+          inputEl.focus();
+        });
+      });
+    }
+
+    function renderMessages() {
+      const list = state.messages[state.channel] || [];
+      msgsEl.innerHTML = list.map((m) => {
+        const agent = AGENTS[m.agent];
+        const color = agent?.color || (m.role === 'user' ? '#3b82f6' : '#8b8b9b');
+        const name = m.author || agent?.name || 'System';
+        const av = (name[0] || '?').toUpperCase();
+        const time = new Date(m.ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const actions = (m.osActions || []).map((a) =>
+          `<button type="button" data-act='${JSON.stringify(a).replace(/'/g, '&#39;')}'>${a.label || a.action}</button>`
+        ).join('');
+        return `
+          <div class="msg ${m.role === 'system' ? 'system' : ''}">
+            <div class="av" style="background:linear-gradient(135deg,${color},#1a1a2e)">${av}</div>
+            <div class="body">
+              <div class="meta"><span class="name" style="color:${color}">${escapeHtml(name)}</span><span class="time">${time}</span></div>
+              <div class="text">${formatText(m.content)}</div>
+              ${actions ? `<div class="actions">${actions}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      msgsEl.querySelectorAll('.actions button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          try {
+            const act = JSON.parse(btn.getAttribute('data-act'));
+            runOsAction(act);
+          } catch {}
+        });
+      });
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function formatText(s) {
+      return escapeHtml(s)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br/>');
+    }
+
+    /** Tell parent GrudgeOS desktop to open apps / create notes */
+    function runOsAction(act) {
+      if (!act || !act.action) return;
+      // Same-window fallback if not iframed
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'treaty-os', ...act }, '*');
+      }
+      if (typeof window.parent?.openApp === 'function' && act.action === 'openApp') {
+        try { window.parent.openApp(act.appId); } catch {}
+      }
+      // Local confirm bubble
+      pushMsg({
+        role: 'system',
+        author: 'OS',
+        content: `OS action: ${act.action}${act.appId ? ' → ' + act.appId : ''}${act.title ? ' · ' + act.title : ''}`,
+        ts: Date.now(),
+      });
+      saveChannel();
+    }
+
+    function pushMsg(m) {
+      if (!state.messages[state.channel]) state.messages[state.channel] = [];
+      state.messages[state.channel].push({ id: 'm' + Date.now() + Math.random(), ...m });
+      renderMessages();
+    }
+
+    function parseMentionsAndCommands(text) {
+      let agent = state.activeAgent;
+      const mention = text.match(/@(\w+)/);
+      if (mention && AGENTS[mention[1]]) agent = mention[1];
+
+      const osActions = [];
+      // /open appId
+      const openMatch = text.match(/\/open\s+([a-z0-9_-]+)/i);
+      if (openMatch) {
+        const appId = openMatch[1].toLowerCase();
+        if (OS_APPS.includes(appId)) {
+          osActions.push({ action: 'openApp', appId, label: `Open ${appId}` });
+        }
+      }
+      // /create note "title"
+      const createMatch = text.match(/\/create\s+(note|file|window)\s+["']?([^"'\n]+)["']?/i);
+      if (createMatch) {
+        osActions.push({
+          action: 'create',
+          kind: createMatch[1].toLowerCase(),
+          title: createMatch[2].trim(),
+          label: `Create ${createMatch[1]}`,
+        });
+      }
+      // /edit ...
+      const editMatch = text.match(/\/edit\s+(.+)/i);
+      if (editMatch) {
+        osActions.push({
+          action: 'edit',
+          instruction: editMatch[1].trim(),
+          label: 'Apply edit plan',
+        });
+      }
+      // Natural language open
+      const nlOpen = text.match(/\bopen\s+(3d\s*viewer|studio3d|ai\s*vm|aivm|terminal|forge|settings|fleet)/i);
+      if (nlOpen && !openMatch) {
+        const map = {
+          '3d viewer': 'studio3d', studio3d: 'studio3d', 'ai vm': 'aivm', aivm: 'aivm',
+          terminal: 'terminal', forge: 'forge', settings: 'settings', fleet: 'fleethub',
+        };
+        const key = nlOpen[1].toLowerCase().replace(/\s+/g, ' ');
+        const appId = map[key];
+        if (appId) osActions.push({ action: 'openApp', appId, label: `Open ${appId}` });
+      }
+
+      return { agent, osActions, text };
+    }
+
+    async function chatWithAgent(agentId, userText) {
+      const agent = AGENTS[agentId] || AGENTS.orchestrator;
+      const system = agent.system + `
+
+You are inside GrudgeOS Treaty Chat. When the user wants to use the OS, suggest concrete commands:
+/open <appId>  apps: ${OS_APPS.join(', ')}
+/create note "title"
+/edit <instruction>
+
+If you want an OS action executed, end with a line: OS_ACTION:openApp:appId
+or OS_ACTION:create:note:Title
+Keep replies concise.`;
+
+      // Prefer window.puterAI then puter.ai
+      if (window.puterAI?.chat) {
+        const r = await window.puterAI.chat(userText, {
+          model: 'claude-sonnet-4',
+          system,
+          conversationId: `treaty-${agentId}`,
+          temperature: 0.5,
+        });
+        if (r?.success && r.content) return String(r.content);
+        if (r?.error) throw new Error(r.error);
+      }
+      if (window.puter?.ai?.chat) {
+        const r = await puter.ai.chat([
+          { role: 'system', content: system },
+          { role: 'user', content: userText },
+        ], { model: 'gpt-4o-mini' });
+        const content = typeof r === 'string' ? r : (r?.message?.content || r?.content || String(r));
+        return content;
+      }
+      // Offline stub
+      return offlineAgentReply(agentId, userText);
+    }
+
+    function offlineAgentReply(agentId, text) {
+      const t = text.toLowerCase();
+      if (t.includes('open') || t.includes('/open')) {
+        return 'I can open OS apps. Try: `/open studio3d` or `/open aivm`.\nOS_ACTION:openApp:studio3d';
+      }
+      if (t.includes('create')) {
+        return 'Creating a note on the OS.\nOS_ACTION:create:note:Treaty Note';
+      }
+      if (agentId === 'code') {
+        return 'Code agent online (offline mode). Paste a snippet or say `/open aivm` to code in AI VM.';
+      }
+      return `${AGENTS[agentId]?.name || 'Agent'} here. Sign in to Puter for full AI. Commands: /open, /create, /edit, @code @creator @editor`;
+    }
+
+    function extractOsActionsFromReply(reply) {
+      const actions = [];
+      const lines = String(reply).split('\n');
+      const clean = [];
+      for (const line of lines) {
+        const m = line.match(/^OS_ACTION:(\w+)(?::(.+))?$/i);
+        if (m) {
+          const kind = m[1];
+          const rest = (m[2] || '').split(':');
+          if (kind === 'openApp' && rest[0]) {
+            actions.push({ action: 'openApp', appId: rest[0].trim(), label: `Open ${rest[0].trim()}` });
+          } else if (kind === 'create') {
+            actions.push({
+              action: 'create',
+              kind: rest[0] || 'note',
+              title: rest.slice(1).join(':') || 'Treaty Note',
+              label: 'Create note',
+            });
+          }
+        } else {
+          clean.push(line);
+        }
+      }
+      return { text: clean.join('\n').trim(), actions };
+    }
+
+    async function send() {
+      const raw = inputEl.value.trim();
+      if (!raw || state.busy) return;
+      state.busy = true;
+      sendBtn.disabled = true;
+      inputEl.value = '';
+
+      const { agent, osActions, text } = parseMentionsAndCommands(raw);
+      pushMsg({ role: 'user', author: 'You', content: raw, ts: Date.now() });
+
+      // Immediate OS actions from user command
+      osActions.forEach((a) => runOsAction(a));
+
+      typingEl.textContent = `${AGENTS[agent]?.name || agent} is typing…`;
+      try {
+        const reply = await chatWithAgent(agent, text);
+        const { text: clean, actions } = extractOsActionsFromReply(reply);
+        const allActions = [...actions, ...osActions.filter((a) => a.action !== 'openApp' || !actions.find((x) => x.appId === a.appId))];
+        pushMsg({
+          role: 'assistant',
+          author: AGENTS[agent]?.name || agent,
+          agent,
+          content: clean || reply,
+          osActions: allActions,
+          ts: Date.now(),
+        });
+        // Auto-run first openApp from agent if user didn't already
+        if (actions[0]?.action === 'openApp' && !osActions.find((a) => a.action === 'openApp')) {
+          // don't auto-force; buttons available
+        }
+      } catch (err) {
+        pushMsg({
+          role: 'system',
+          author: 'Treaty',
+          content: `Agent error: ${err.message || err}. Puter AI may require sign-in.`,
+          ts: Date.now(),
+        });
+      } finally {
+        typingEl.textContent = '';
+        state.busy = false;
+        sendBtn.disabled = false;
+        await saveChannel();
+        inputEl.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', send);
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+    document.getElementById('btn-clear').addEventListener('click', async () => {
+      state.messages[state.channel] = [];
+      await saveChannel();
+      loadChannel(state.channel);
+    });
+    document.getElementById('btn-help').addEventListener('click', () => {
+      pushMsg({
+        role: 'system',
+        author: 'Treaty',
+        content: `Treaty Chat commands:
+• @orchestrator @code @creator @editor — talk to an agent
+• /open <app> — open OS app (${OS_APPS.slice(0, 8).join(', ')}…)
+• /create note "Title" — create a note window on OS
+• /edit <instruction> — plan an edit with Editor agent
+
+Agents can chat, open 3D Viewer, AI VM, Fleet Hub, and more.`,
+        ts: Date.now(),
+      });
+    });
+
+    renderChannels();
+    renderAgents();
+    loadChannel('general');
+
+    // Wait for puterAI if loading
+    setTimeout(() => {
+      if (!window.puterAI && window.puter?.ai) {
+        console.info('[Treaty] puter.ai available');
+      }
+    }, 1500);
+  </script>
+</body>
+</html>

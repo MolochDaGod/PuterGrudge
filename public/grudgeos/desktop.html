@@ -4683,11 +4683,11 @@
       },
       grudchat: {
         id: 'grudchat',
-        name: 'GrudChat',
+        name: 'Treaty Chat',
         iconPath: 'grudge-chat',
-        color: 'linear-gradient(135deg, #8b5cf6, #00f5ff)',
-        width: 900,
-        height: 600,
+        color: 'linear-gradient(135deg, #e94560, #8b5cf6)',
+        width: 1100,
+        height: 720,
         content: 'grudchat'
       },
       agentsquad: {
@@ -5665,6 +5665,84 @@
         setTimeout(() => initStudio3DTabs(), 0);
       }
     }
+
+    // Treaty Chat → OS bridge (agents open/create/edit on desktop)
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || data.type !== 'treaty-os') return;
+      try {
+        if (data.action === 'openApp' && data.appId && typeof openApp === 'function') {
+          openApp(data.appId);
+          return;
+        }
+        if (data.action === 'create') {
+          const title = data.title || 'Treaty Note';
+          const kind = data.kind || 'note';
+          const winId = 'win_treaty_' + (++windowCounter);
+          const body = kind === 'note'
+            ? `<div style="padding:16px;height:100%;background:#12121e;color:#e8e8ff;font-family:system-ui,sans-serif;">
+                <h3 style="margin:0 0 10px;color:#00f5ff;">${String(title).replace(/[<>&]/g, '')}</h3>
+                <textarea style="width:100%;height:calc(100% - 36px);background:#0a0a12;border:1px solid rgba(139,92,246,0.3);border-radius:8px;color:#e8e8ff;padding:12px;resize:none;font-size:14px;" placeholder="Treaty note from chat…"></textarea>
+              </div>`
+            : `<div style="padding:20px;color:#e8e8ff;">Created: ${String(title).replace(/[<>&]/g, '')}</div>`;
+          windows[winId] = {
+            id: winId,
+            appId: 'treaty-note',
+            title: title,
+            iconPath: 'grudge-chat',
+            color: 'linear-gradient(135deg,#e94560,#8b5cf6)',
+            x: 120 + (windowCounter % 5) * 24,
+            y: 80 + (windowCounter % 5) * 24,
+            width: 480,
+            height: 360,
+            minimized: false,
+            maximized: false,
+          };
+          // inject note content via temporary getAppContent override path
+          const container = document.getElementById('windows-container');
+          if (!container) return;
+          const el = document.createElement('div');
+          el.className = 'window';
+          el.id = winId;
+          el.style.cssText = `left:${windows[winId].x}px;top:${windows[winId].y}px;width:480px;height:360px;z-index:${++zIndexCounter}`;
+          el.innerHTML = `
+            <div class="window-titlebar">
+              <span class="window-icon">${makeIconImg('grudge-chat', 20)}</span>
+              <span class="window-title">${String(title).replace(/[<>&]/g, '')}</span>
+              <div class="window-controls">
+                <div class="window-btn minimize">─</div>
+                <div class="window-btn maximize">□</div>
+                <div class="window-btn close">✕</div>
+              </div>
+            </div>
+            <div class="window-content">${body}</div>
+            <div class="resize-handle se"></div>
+          `;
+          container.appendChild(el);
+          setupWindowEvents(el, winId);
+          updateTaskbar();
+          focusWindow(winId);
+          return;
+        }
+        if (data.action === 'edit' && data.instruction) {
+          // Surface edit intent in a note for the user/agent loop
+          window.postMessage({
+            type: 'treaty-os',
+            action: 'create',
+            kind: 'note',
+            title: 'Edit plan',
+          }, '*');
+          setTimeout(() => {
+            const notes = document.querySelectorAll('.window-content textarea');
+            const last = notes[notes.length - 1];
+            if (last) last.value = String(data.instruction);
+          }, 50);
+        }
+      } catch (err) {
+        console.warn('[Treaty→OS]', err);
+      }
+    });
+
     
     function initSettingsNav(windowEl) {
       const navItems = windowEl.querySelectorAll('.settings-nav-item');
@@ -7113,76 +7191,16 @@
             </div>
           `;
         case 'grudchat':
+          // Treaty Chat — AI agents talk, open OS apps, create/edit
           return `
-            <div id="grudchat-app" data-testid="grudchat-app" style="display:flex;height:100%;background:linear-gradient(180deg,#1a1a2e 0%,#16161d 100%);font-family:'Rajdhani',sans-serif;position:relative;">
-              <div style="width:240px;background:rgba(18,18,31,0.95);border-right:1px solid rgba(139,92,246,0.2);display:flex;flex-direction:column;">
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(139,92,246,0.1);border-bottom:1px solid rgba(139,92,246,0.3);">
-                  <img src="/grudgeos/assets/icons/generated/grudchat.png" alt="GG" style="width:24px;height:24px;border-radius:4px;">
-                  <span style="flex:1;font-weight:700;color:#e8e8ff;font-size:14px;">GrudgeGameZone</span>
-                  <button style="background:none;border:none;color:#8b8b9b;cursor:pointer;" data-testid="btn-server-menu">▼</button>
-                </div>
-                <div id="grudchat-channels" style="flex:1;overflow-y:auto;padding:8px;">
-                  <div style="padding:8px;color:#8b8b9b;font-size:12px;">
-                    <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(139,92,246,0.15);border-radius:4px;margin-bottom:4px;cursor:pointer;color:#00f5ff;">
-                      <span style="color:#8b8b9b;">#</span><span>agent-swarm</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:4px;margin-bottom:4px;cursor:pointer;color:#a0a0c0;">
-                      <span style="color:#8b8b9b;">#</span><span>general</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:4px;margin-bottom:4px;cursor:pointer;color:#a0a0c0;">
-                      <span style="color:#8b8b9b;">#</span><span>ai-tasks</span>
-                    </div>
-                  </div>
-                </div>
-                <div id="grudchat-user-panel" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,10,18,0.9);border-top:1px solid rgba(80,80,112,0.2);">
-                  <img src="/grudgeos/assets/icons/generated/user-avatar.png" alt="U" style="width:32px;height:32px;border-radius:50%;">
-                  <div style="flex:1;">
-                    <div style="font-weight:600;color:#e8e8ff;font-size:13px;">Guest</div>
-                    <div style="font-size:11px;color:#00ff88;">Online</div>
-                  </div>
-                  <div style="display:flex;gap:4px;">
-                    <button style="width:28px;height:28px;background:rgba(80,80,112,0.3);border:none;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;" data-testid="btn-mute"><img src="/grudgeos/assets/icons/generated/mute.png" alt="M" style="width:14px;height:14px;"></button>
-                    <button style="width:28px;height:28px;background:rgba(80,80,112,0.3);border:none;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;" data-testid="btn-settings"><img src="/grudgeos/assets/icons/generated/settings.png" alt="S" style="width:14px;height:14px;"></button>
-                  </div>
-                </div>
-              </div>
-              <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-                <div id="grudchat-channel-header" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(18,18,31,0.9);border-bottom:1px solid rgba(80,80,112,0.2);">
-                  <span style="color:#8b8b9b;font-size:18px;">#</span>
-                  <span style="flex:1;font-weight:700;color:#e8e8ff;font-size:15px;">agent-swarm</span>
-                  <div style="display:flex;gap:8px;">
-                    <button style="width:28px;height:28px;background:rgba(80,80,112,0.2);border:none;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;" data-testid="btn-search"><img src="/grudgeos/assets/icons/generated/search.png" alt="SR" style="width:14px;height:14px;"></button>
-                    <button style="width:28px;height:28px;background:rgba(80,80,112,0.2);border:none;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;" data-testid="btn-members"><img src="/grudgeos/assets/icons/generated/members.png" alt="MX" style="width:14px;height:14px;"></button>
-                  </div>
-                </div>
-                <div id="grudchat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;">
-                  <div style="display:flex;gap:12px;">
-                    <img src="/grudgeos/assets/agents/agent-purple.png" alt="A" style="width:40px;height:40px;border-radius:50%;">
-                    <div style="flex:1;">
-                      <div style="display:flex;align-items:baseline;gap:8px;">
-                        <span style="font-weight:700;color:#8b5cf6;">Orchestrator</span>
-                        <span style="font-size:11px;color:#505070;">Today at 10:32</span>
-                      </div>
-                      <div style="color:#e8e8ff;font-size:14px;line-height:1.5;margin-top:4px;">Welcome to the Agent Swarm channel. All agents report status here.</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:12px;">
-                    <img src="/grudgeos/assets/agents/agent-green.png" alt="A" style="width:40px;height:40px;border-radius:50%;">
-                    <div style="flex:1;">
-                      <div style="display:flex;align-items:baseline;gap:8px;">
-                        <span style="font-weight:700;color:#00ff88;">Code Agent</span>
-                        <span style="font-size:11px;color:#505070;">Today at 10:33</span>
-                      </div>
-                      <div style="color:#e8e8ff;font-size:14px;line-height:1.5;margin-top:4px;">Ready for code tasks. QuickJS sandbox initialized.</div>
-                    </div>
-                  </div>
-                </div>
-                <div id="grudchat-input-area" style="display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(18,18,31,0.9);border-top:1px solid rgba(80,80,112,0.2);">
-                  <button style="width:36px;height:36px;background:rgba(139,92,246,0.2);border:none;border-radius:50%;color:#8b5cf6;font-size:18px;cursor:pointer;" data-testid="btn-attach">+</button>
-                  <input type="text" id="grudchat-input" placeholder="Message #agent-swarm" data-testid="input-message" style="flex:1;background:rgba(30,30,50,0.8);border:1px solid rgba(80,80,112,0.3);border-radius:8px;padding:10px 14px;color:#e8e8ff;font-size:14px;outline:none;">
-                  <button id="grudchat-send" data-testid="btn-send" style="padding:8px 16px;background:linear-gradient(135deg,#8b5cf6,#00f5ff);border:none;border-radius:6px;color:#fff;font-weight:600;cursor:pointer;">Send</button>
-                </div>
-              </div>
+            <div id="grudchat-app" data-testid="grudchat-app" style="display:flex;flex-direction:column;height:100%;min-height:0;background:#0b0b14;">
+              <iframe
+                src="/grudgeos/treaty-chat.html"
+                style="width:100%;height:100%;border:none;flex:1;background:#0b0b14;"
+                title="Treaty Chat"
+                data-testid="treaty-chat-iframe"
+                allow="clipboard-read; clipboard-write"
+              ></iframe>
             </div>
           `;
         case 'networktools':

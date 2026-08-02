@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, type CSSProperties } from 'react';
 import { 
   Code, 
   Bot, 
@@ -44,29 +44,95 @@ const DESKTOP_APPS: DesktopApp[] = [
   { id: 'settings', name: 'Settings', icon: Settings, iconColor: '#8b8b9b', iconBg: 'linear-gradient(135deg, #8b8b9b, #505070)', component: 'settings', width: 500, height: 400 },
 ];
 
-function DesktopIcon({ app, onClick, isSelected }: { app: DesktopApp; onClick: () => void; isSelected: boolean }) {
+/** Icon cell size for canvas-aware grid (Windows-style columns by height). */
+const ICON_CELL_W = 96;
+const ICON_CELL_H = 100;
+const ICON_PAD = 16;
+
+function DesktopIcon({
+  app,
+  onClick,
+  isSelected,
+  style,
+}: {
+  app: DesktopApp;
+  onClick: () => void;
+  isSelected: boolean;
+  style?: CSSProperties;
+}) {
   const Icon = app.icon;
   
   return (
     <div
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg cursor-pointer transition-all select-none ${
-        isSelected ? 'bg-[#00f5ff]/20 border border-[#00f5ff]' : 'hover:bg-[#8b5cf6]/20'
+      className={`absolute flex flex-col items-center gap-1.5 p-2 rounded-lg cursor-pointer transition-all select-none ${
+        isSelected ? 'bg-[#00f5ff]/20 border border-[#00f5ff]' : 'hover:bg-[#8b5cf6]/20 border border-transparent'
       }`}
+      style={style}
       onClick={onClick}
       onDoubleClick={onClick}
       data-testid={`desktop-icon-${app.id}`}
     >
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
         style={{ background: app.iconBg }}
       >
         <Icon className="w-6 h-6 text-white" />
       </div>
-      <span className="text-xs text-center text-[#e8e8ff] max-w-[80px] truncate drop-shadow-md">
+      <span className="text-xs text-center text-[#e8e8ff] max-w-[84px] leading-tight line-clamp-2 drop-shadow-md">
         {app.name}
       </span>
     </div>
   );
+}
+
+/**
+ * Lay out icons on the AI VM canvas:
+ * - fill top→bottom within canvas height, then next column (desktop-style)
+ * - never a single endless column when height/width allow multi-col
+ * - never overflow canvas width (increase rows if needed)
+ */
+function layoutIconsOnCanvas(
+  count: number,
+  canvasW: number,
+  canvasH: number,
+): { left: number; top: number }[] {
+  if (count <= 0) return [];
+
+  const usableH = Math.max(ICON_CELL_H, (canvasH || 600) - ICON_PAD * 2);
+  const usableW = Math.max(ICON_CELL_W, (canvasW || 800) - ICON_PAD * 2);
+
+  const maxRowsByHeight = Math.max(1, Math.floor(usableH / ICON_CELL_H));
+  const maxColsByWidth = Math.max(1, Math.floor(usableW / ICON_CELL_W));
+
+  // Start with height-based rows (classic desktop), but cap so wide canvases get more columns
+  // e.g. prefer ~4–6 rows when space allows instead of packing all into one tall column
+  const preferredRows = Math.min(
+    maxRowsByHeight,
+    Math.max(3, Math.ceil(count / Math.min(4, maxColsByWidth))),
+  );
+
+  // If preferred rows would need more columns than fit, grow rows to fit width
+  let rows = preferredRows;
+  let colsNeeded = Math.ceil(count / rows);
+  if (colsNeeded > maxColsByWidth) {
+    rows = Math.max(1, Math.ceil(count / maxColsByWidth));
+    rows = Math.min(rows, maxRowsByHeight);
+    colsNeeded = Math.ceil(count / rows);
+  }
+
+  // Final safety: still too many columns → pack tighter by using all height rows
+  if (colsNeeded > maxColsByWidth) {
+    rows = maxRowsByHeight;
+  }
+
+  return Array.from({ length: count }, (_, index) => {
+    const row = index % rows;
+    const col = Math.floor(index / rows);
+    return {
+      left: ICON_PAD + col * ICON_CELL_W,
+      top: ICON_PAD + row * ICON_CELL_H,
+    };
+  });
 }
 
 function TaskbarApp({ window, onClick }: { window: WindowState; onClick: () => void }) {
@@ -200,15 +266,35 @@ function DesktopContent() {
           `,
         }}
       >
-        <div className="absolute top-4 left-4 grid grid-flow-col grid-rows-3 gap-2 z-10" data-testid="desktop-icons-grid">
-          {DESKTOP_APPS.map((app) => (
-            <DesktopIcon
-              key={app.id}
-              app={app}
-              onClick={() => handleAppClick(app)}
-              isSelected={selectedApp === app.id}
-            />
-          ))}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          data-testid="desktop-icons-grid"
+          aria-label="AI VM desktop icons"
+        >
+          {(() => {
+            const positions = layoutIconsOnCanvas(
+              DESKTOP_APPS.length,
+              containerBounds.width || 800,
+              containerBounds.height || 600,
+            );
+            return DESKTOP_APPS.map((app, index) => {
+              const pos = positions[index] || { left: ICON_PAD, top: ICON_PAD };
+              return (
+                <DesktopIcon
+                  key={app.id}
+                  app={app}
+                  onClick={() => handleAppClick(app)}
+                  isSelected={selectedApp === app.id}
+                  style={{
+                    left: pos.left,
+                    top: pos.top,
+                    width: ICON_CELL_W - 8,
+                    pointerEvents: 'auto',
+                  }}
+                />
+              );
+            });
+          })()}
         </div>
 
         {windows.map((window) => (

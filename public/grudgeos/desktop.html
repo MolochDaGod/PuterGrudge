@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <base href="/grudgeos/">
-  <meta name="grudgeos-version" content="3.0.0" />
+  <meta name="grudgeos-version" content="3.1.0" />
   <meta name="application-name" content="Puter Monitor AI" />
   <link rel="manifest" href="/grudgeos/manifest.json" />
   <meta charset="UTF-8">
@@ -4377,9 +4377,6 @@
   </style>
 </head>
 <body>
-  <!-- Static debug element to verify page loads -->
-  <div id="static-debug" data-testid="static-debug" style="position:fixed;top:50px;left:5px;background:#ff0;color:#000;padding:5px;z-index:99999;font-size:12px;">Page Loaded</div>
-  
   <!-- File Drop Overlay -->
   <div id="file-drop-overlay" class="file-drop-overlay" data-testid="file-drop-overlay">
     <div class="file-drop-content">
@@ -4407,11 +4404,6 @@
   <div id="desktop-shell" data-testid="desktop-shell">
     <div id="desktop-viewport" data-testid="desktop-viewport">
       <div id="desktop" data-testid="desktop">
-        <!-- Static fallback icon for debugging - will be replaced by JS -->
-        <div class="desktop-icon" data-app="debug-static" data-testid="icon-debug-static" data-purged="true" style="display:none!important">
-          <div class="desktop-icon-img"><img src="/grudgeos/assets/icons/generated/ai-studio.png" alt="debug" style="width:48px;height:48px;border-radius:6px;"></div>
-          <div class="desktop-icon-label">Debug Icon</div>
-        </div>
       </div>
       <div id="selection-box" data-testid="selection-box"></div>
       <div id="snap-indicator"></div>
@@ -5293,8 +5285,7 @@
         ? window.GrudgeFleetRegistry.DESKTOP_ICONS.slice()
         : ['aivm', 'grudchat', 'agentsquad', 'fleethub', 'pods', 'snapshots', 'studio3d', 'wasmrunner', 'grudgecloud', 'aistudio', 'observer', 'gameeditor', 'networktools', 'warlords', 'openlauncher', 'forge'];
       
-      console.log('[GrudgeOS] renderDesktopIcons: desktop element:', desktop);
-      console.log('[GrudgeOS] renderDesktopIcons: viewport element:', viewport);
+
       
       if (!desktop || !viewport) {
         console.error('[GrudgeOS] Desktop or viewport element not found!');
@@ -5352,53 +5343,6 @@
         iconDiv.appendChild(labelDiv);
         desktop.appendChild(iconDiv);
       });
-      
-      const iconCount = desktop.querySelectorAll('.desktop-icon').length;
-      console.log('[GrudgeOS] Icons created via DOM. Count:', iconCount);
-      
-      // Store state for debugging
-      window._desktopDebug = {
-        iconCount: iconCount,
-        htmlLength: desktop.innerHTML.length,
-        desktopId: desktop.id,
-        timestamp: Date.now(),
-        desktopElement: desktop
-      };
-      
-      console.log('[GrudgeOS] Desktop debug state:', JSON.stringify({iconCount: iconCount, htmlLength: desktop.innerHTML.length}));
-      
-      // Add visible indicator
-      let indicator = document.getElementById('icon-count-indicator');
-      if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'icon-count-indicator';
-        indicator.setAttribute('data-testid', 'icon-count-indicator');
-        indicator.style.cssText = 'position: fixed; top: 5px; left: 5px; background: #00ff00; color: black; padding: 5px 10px; z-index: 99999; font-size: 14px; font-weight: bold; border-radius: 4px;';
-        document.body.appendChild(indicator);
-      }
-      indicator.textContent = 'Icons: ' + iconCount;
-      
-      // Add MutationObserver to track if desktop is modified
-      if (!window._desktopObserver) {
-        window._desktopObserver = new MutationObserver((mutations) => {
-          mutations.forEach(m => {
-            if (m.removedNodes.length > 0) {
-              console.warn('[GrudgeOS] Desktop nodes REMOVED:', m.removedNodes.length, 'nodes');
-              console.trace('[GrudgeOS] Stack trace for removal');
-            }
-          });
-        });
-        window._desktopObserver.observe(desktop, { childList: true, subtree: true });
-      }
-      
-      // Verify icons persist after a delay
-      setTimeout(() => {
-        const currentCount = document.getElementById('desktop')?.querySelectorAll('.desktop-icon').length || 0;
-        console.log('[GrudgeOS] Icon verification after 1s: count =', currentCount);
-        window._desktopDebug.verifiedCount = currentCount;
-        const ind = document.getElementById('icon-count-indicator');
-        if (ind) ind.textContent = 'Icons: ' + currentCount + ' (verified)';
-      }, 1000);
       
       // Simple per-icon drag with pointer capture
       desktop.querySelectorAll('.desktop-icon').forEach(icon => {

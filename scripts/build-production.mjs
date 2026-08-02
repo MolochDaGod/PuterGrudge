@@ -49,9 +49,21 @@ let desktop = readFileSync(desktopPath, 'utf8');
 if (!desktop.includes('<base ')) {
   desktop = desktop.replace(
     /<head>/i,
-    `<head>\n  <base href="/grudgeos/">\n  <meta name="grudgeos-version" content="3.0.0" />\n  <meta name="application-name" content="Puter Monitor AI" />\n  <link rel="manifest" href="/grudgeos/manifest.json" />`,
+    `<head>\n  <base href="/grudgeos/">\n  <meta name="grudgeos-version" content="3.1.0" />\n  <meta name="application-name" content="Puter Monitor AI" />\n  <link rel="manifest" href="/grudgeos/manifest.json" />`,
+  );
+} else {
+  desktop = desktop.replace(
+    /content="3\.0\.0"/,
+    'content="3.1.0"',
   );
 }
+
+// Strip leftover debug overlays if any remain in source
+desktop = desktop
+  .replace(/<!-- Static debug[\s\S]*?<\/div>\s*/i, '')
+  .replace(/<div id="static-debug"[\s\S]*?<\/div>\s*/i, '')
+  .replace(/let indicator = document\.getElementById\('icon-count-indicator'\)[\s\S]*?indicator\.textContent = 'Icons: ' \+ iconCount;\s*/g, '')
+  .replace(/if \(ind\) ind\.textContent = 'Icons: ' \+ currentCount \+ ' \(verified\)';\s*/g, '');
 
 // Inject fleet registry before first lib script if missing
 if (!desktop.includes('fleet-registry.js')) {
@@ -174,21 +186,39 @@ const puterShell = `<!DOCTYPE html>
 </html>`;
 writeFileSync(join(puterAppDir, 'index.html'), puterShell);
 
-// Health static stamp (edge-only; real /api proxies to Render)
-writeFileSync(
-  join(out, 'edge-version.json'),
-  JSON.stringify(
-    {
-      app: 'puter-monitor-ai',
-      version: '3.0.0',
-      builtAt: new Date().toISOString(),
-      os: 'GrudgeOS',
-      api: 'https://puter-monitor-ai.onrender.com',
-    },
-    null,
-    2,
-  ),
-);
+// Fleet health (static JSON — no Render). Browser Puter AI is user-pays.
+const health = {
+  status: 'healthy',
+  service: 'puter-monitor-ai',
+  version: '3.1.0',
+  os: 'GrudgeOS',
+  mode: 'fleet-edge',
+  builtAt: new Date().toISOString(),
+  stack: {
+    shell: 'vercel',
+    auth: 'https://id.grudge-studio.com',
+    gameApi: 'https://grudge-api-production-0d46.up.railway.app',
+    aiHub: 'https://ai.grudge-studio.com',
+    puter: 'user-pays (js.puter.com)',
+    assets: 'https://assets.grudge-studio.com',
+    objectStore: 'https://objectstore.grudge-studio.com',
+  },
+  services: {
+    puterAI: true,
+    grudgeId: true,
+    railway: true,
+    aiHub: true,
+  },
+  fleet: {
+    warlords: 'https://grudgewarlords.com',
+    open: 'https://open.grudge-studio.com',
+    forge: 'https://forge.grudge-studio.com',
+    character: 'https://character.grudge-studio.com',
+  },
+};
+mkdirSync(join(out, 'api'), { recursive: true });
+writeFileSync(join(out, 'api', 'health.json'), JSON.stringify(health, null, 2));
+writeFileSync(join(out, 'edge-version.json'), JSON.stringify(health, null, 2));
 
 console.log('[build-production] wrote', out);
 console.log('[build-production] puter shell →', puterAppDir);

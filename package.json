@@ -1,7 +1,7 @@
 {
   "name": "puter-monitor-ai",
-  "version": "3.0.0",
-  "description": "Puter Monitor AI — GrudgeOS collaborative WebOS (fleet + Puter AI + Render API)",
+  "version": "3.1.0",
+  "description": "Puter Monitor AI — GrudgeOS WebOS (Vercel + Railway + Grudge ID + Puter user-pays)",
   "type": "module",
   "license": "MIT",
   "scripts": {

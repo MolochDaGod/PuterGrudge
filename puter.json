@@ -1,33 +1,28 @@
 {
   "name": "puter-monitor-ai",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "title": "Puter Monitor AI — GrudgeOS",
-  "description": "Grudge Studio collaborative WebOS: free Puter AI, fleet games (Warlords/Open/Forge), cloud tools, agent ops.",
+  "description": "Grudge Studio WebOS on Vercel. Auth → Grudge ID, data → Railway, AI → Puter user-pays + AI Hub. No Render.",
   "type": "app",
   "index": "dist/edge/puter-app-dist/index.html",
   "icon": "public/grudgeos/pwa-512x512.png",
   "permissions": ["ai", "fs", "kv", "auth", "hosting"],
   "auth": {
     "provider": "puter",
-    "integration": "grudge-id-optional"
-  },
-  "routes": {
-    "/": { "static": "dist/edge" },
-    "/api/*": { "proxy": "https://puter-monitor-ai.onrender.com/api" }
+    "fleet": "grudge-id"
   },
   "deployment": {
-    "strategy": "static+proxy",
-    "healthcheck": "https://puter-monitor-ai.onrender.com/api/health",
     "production": {
-      "vercel": "https://puter-monitor-ai.vercel.app",
-      "render": "https://puter-monitor-ai.onrender.com"
-    }
+      "vercel": "https://puter-monitor-ai.vercel.app"
+    },
+    "healthcheck": "/api/health"
   },
   "fleet": {
+    "auth": "https://id.grudge-studio.com",
+    "railway": "https://grudge-api-production-0d46.up.railway.app",
+    "ai": "https://ai.grudge-studio.com",
     "warlords": "https://grudgewarlords.com",
     "open": "https://open.grudge-studio.com",
-    "forge": "https://forge.grudge-studio.com",
-    "id": "https://id.grudge-studio.com",
-    "ai": "https://ai.grudge-studio.com"
+    "forge": "https://forge.grudge-studio.com"
   }
 }

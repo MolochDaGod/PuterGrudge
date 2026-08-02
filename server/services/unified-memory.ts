@@ -42,13 +42,27 @@ class UnifiedMemorySystem {
         apiKey: process.env.QDRANT_API_KEY,
       });
 
-      // Initialize Redis (Cache)
-      this.redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-        retryStrategy: (times) => Math.min(times * 50, 2000),
-      });
+      // Redis optional — only when REDIS_URL / REDIS_HOST set (Railway may not have Redis)
+      if (process.env.REDIS_URL || process.env.REDIS_HOST) {
+        this.redis = process.env.REDIS_URL
+          ? new Redis(process.env.REDIS_URL, {
+              retryStrategy: (times) => Math.min(times * 50, 2000),
+              maxRetriesPerRequest: 1,
+              lazyConnect: true,
+            })
+          : new Redis({
+              host: process.env.REDIS_HOST,
+              port: parseInt(process.env.REDIS_PORT || '6379'),
+              password: process.env.REDIS_PASSWORD,
+              retryStrategy: (times) => Math.min(times * 50, 2000),
+              maxRetriesPerRequest: 1,
+              lazyConnect: true,
+            });
+        this.redis.connect().catch(() => {
+          logger.warn('[UnifiedMemory] Redis unavailable — running without cache');
+          this.redis = null as any;
+        });
+      }
 
       // Create collections if they don't exist
       await this.ensureCollections();

@@ -49,18 +49,31 @@ function envReady() {
 
 function parseBody(req) {
   return new Promise((resolve) => {
-    if (req.body && typeof req.body === 'object') {
-      resolve(req.body);
-      return;
+    if (req.body != null) {
+      if (typeof req.body === 'object') return resolve(req.body);
+      if (typeof req.body === 'string') {
+        try {
+          return resolve(JSON.parse(req.body));
+        } catch {
+          return resolve({ raw: req.body });
+        }
+      }
+    }
+    // Body already consumed / empty — do not hang on stream
+    if (req.readableEnded || req.complete) {
+      return resolve({});
     }
     let data = '';
+    const timer = setTimeout(() => resolve({}), 2000);
     req.on('data', (chunk) => {
       data += chunk;
       if (data.length > 1_000_000) {
-        resolve(null);
+        clearTimeout(timer);
+        resolve({});
       }
     });
     req.on('end', () => {
+      clearTimeout(timer);
       if (!data) return resolve({});
       try {
         resolve(JSON.parse(data));
@@ -68,7 +81,10 @@ function parseBody(req) {
         resolve({ raw: data });
       }
     });
-    req.on('error', () => resolve({}));
+    req.on('error', () => {
+      clearTimeout(timer);
+      resolve({});
+    });
   });
 }
 

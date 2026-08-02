@@ -19,10 +19,17 @@ function copyRootPublic(): Plugin {
       : [],
   );
 
-  function copyRecursive(src: string, dest: string) {
+  // Never clobber the Vite React SPA entry or hashed bundles
+  const skipFiles = new Set(["index.html"]);
+
+  function copyRecursive(src: string, dest: string, isRoot = false) {
     if (!existsSync(src)) return;
     mkdirSync(dest, { recursive: true });
     for (const entry of readdirSync(src)) {
+      if (isRoot && skipFiles.has(entry)) {
+        console.log(`[copy-root-public] keep Vite SPA: skip overwriting ${entry}`);
+        continue;
+      }
       const from = path.join(src, entry);
       const to = path.join(dest, entry);
       const st = statSync(from);
@@ -31,7 +38,7 @@ function copyRootPublic(): Plugin {
           console.log(`[copy-root-public] skip heavy dir: ${entry}`);
           continue;
         }
-        copyRecursive(from, to);
+        copyRecursive(from, to, false);
       } else {
         cpSync(from, to);
       }
@@ -46,8 +53,9 @@ function copyRootPublic(): Plugin {
         console.warn("[copy-root-public] public/ not found — skipping");
         return;
       }
-      console.log("[copy-root-public] merging public/ → dist/public");
-      copyRecursive(publicSrc, outDir);
+      console.log("[copy-root-public] merging public/ → dist/public (preserve SPA index.html)");
+      // Prefer grudgeos + static assets; keep Vite-built index.html as /
+      copyRecursive(publicSrc, outDir, true);
     },
   };
 }

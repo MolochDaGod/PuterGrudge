@@ -56,7 +56,18 @@
       role: 'JSON catalogs / search',
     },
     open: { url: 'https://open.grudge-studio.com', role: 'Open launcher' },
-    forge: { url: 'https://forge.grudge-studio.com', role: 'Map / scene editor' },
+    forge: {
+      url: 'https://forge.grudge-studio.com',
+      editor: 'https://forge.grudge-studio.com/editor',
+      role: 'Grudge Studio Forge — map / scene editor product',
+      /** Shared with Forge puterDataProvider — OS lists these via forge-cloud-bridge */
+      puter: {
+        kvProjects: 'grudge:forge:projects:index',
+        kvNextId: 'grudge:forge:nextId',
+        fsRoot: 'Grudge/forge',
+      },
+      note: 'Editor projects live on Puter (signed-in). Binaries on assets CDN. Player bag on Railway.',
+    },
     warlords: { url: 'https://grudgewarlords.com', role: 'Warlords play' },
     character: { url: 'https://character.grudge-studio.com', role: 'Foundry create' },
   };

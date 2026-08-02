@@ -15,6 +15,7 @@
     railwayApi: 'https://grudge-api-production-0d46.up.railway.app',
     open: 'https://open.grudge-studio.com',
     forge: 'https://forge.grudge-studio.com',
+    forgeEditor: 'https://forge.grudge-studio.com/editor',
     warlords: 'https://grudgewarlords.com',
     character: 'https://character.grudge-studio.com',
     aiHub: 'https://ai.grudge-studio.com',
@@ -23,6 +24,9 @@
     ui: 'https://ui.grudge-studio.com',
     puter: 'https://puter.com',
     github: 'https://github.com/MolochDaGod/PuterGrudge',
+    /** Puter paths shared with Forge puterDataProvider (see forge-cloud-bridge.js) */
+    forgePuterKv: 'grudge:forge:projects:index',
+    forgePuterFs: 'Grudge/forge',
   };
 
   const APPS = {
@@ -147,7 +151,9 @@
     forge: {
       id: 'forge', name: 'Forge', iconPath: 'creating',
       color: 'linear-gradient(135deg, #8b5cf6, #ff00aa)',
-      width: 400, height: 200, kind: 'external', url: FLEET.forge, status: 'live', category: 'fleet',
+      width: 920, height: 640, content: 'forgecloud', kind: 'native', status: 'live', category: 'fleet',
+      url: FLEET.forge, // landing; projects open /editor?project=
+      cloud: { kv: FLEET.forgePuterKv, fs: FLEET.forgePuterFs },
     },
     grudgeid: {
       id: 'grudgeid', name: 'Grudge ID', iconPath: 'settings',
@@ -219,13 +225,18 @@
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">${cards}</div>
         <div style="font-size:12px;opacity:0.65;line-height:1.7;">
-          <div><strong>OS shell</strong> → Vercel (this app)</div>
+          <div><strong>OS shell</strong> → Vercel (this app · puter-monitor-ai)</div>
           <div><strong>App users API</strong> → ${FLEET.appApi || 'Railway puter-monitor-api'}</div>
           <div><strong>Auth</strong> → Grudge ID (${FLEET.grudgeId})</div>
           <div><strong>Characters / account</strong> → Railway grudge-api</div>
           <div><strong>User-pays AI</strong> → Puter (default gpt-4o-mini · code claude-sonnet-4)</div>
-          <div><strong>Fleet AI hub</strong> → ${FLEET.aiHub}</div>
+          <div><strong>Fleet AI hub</strong> → ${FLEET.aiHub} · GBux for paid fleet models</div>
           <div><strong>Assets</strong> → ${FLEET.assets}</div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+            <strong>Forge projects (Puter cloud)</strong><br/>
+            KV <code>${FLEET.forgePuterKv}</code> · FS <code>${FLEET.forgePuterFs}/</code><br/>
+            Open the <em>Forge</em> desktop app to list cloud projects, or ${FLEET.forgeEditor}
+          </div>
         </div>
       </div>`;
   }

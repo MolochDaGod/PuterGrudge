@@ -5,7 +5,13 @@
  */
 export default function handler(req, res) {
   const { url, method } = req;
-  const path = url.replace(/^\/api\/?/, '/');
+  // Normalize path: strip query string and /api prefix from rewrites
+  const raw = String(url || '/').split('?')[0];
+  let path = raw
+    .replace(/^\/api\/index\.js\/?/, '/')
+    .replace(/^\/api\/?/, '/');
+  if (!path.startsWith('/')) path = `/${path}`;
+  if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
 
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +23,7 @@ export default function handler(req, res) {
   }
 
   // Health check
-  if (path === '/health' || path === '/') {
+  if (path === '/health' || path === '/' || path === '') {
     return res.status(200).json({
       status: 'ok',
       service: 'puter-monitor-ai',

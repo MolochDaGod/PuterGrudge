@@ -190,12 +190,13 @@ writeFileSync(join(puterAppDir, 'index.html'), puterShell);
 const health = {
   status: 'healthy',
   service: 'puter-monitor-ai',
-  version: '3.1.0',
+  version: '3.2.0',
   os: 'GrudgeOS',
-  mode: 'fleet-edge',
+  mode: 'vercel-shell+railway-api',
   builtAt: new Date().toISOString(),
   stack: {
     shell: 'vercel',
+    appApi: 'https://puter-monitor-api-production.up.railway.app',
     auth: 'https://id.grudge-studio.com',
     gameApi: 'https://grudge-api-production-0d46.up.railway.app',
     aiHub: 'https://ai.grudge-studio.com',
@@ -206,7 +207,8 @@ const health = {
   services: {
     puterAI: true,
     grudgeId: true,
-    railway: true,
+    appRailway: true,
+    fleetRailway: true,
     aiHub: true,
   },
   fleet: {

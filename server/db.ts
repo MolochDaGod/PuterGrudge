@@ -5,16 +5,18 @@ import * as schema from "@shared/schema";
 const DATABASE_URL = process.env.DATABASE_URL || "postgresql://localhost:5432/puter_monitor";
 
 // Create PostgreSQL connection pool
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: DATABASE_URL,
   max: parseInt(process.env.DB_POOL_MAX || "10", 10),
   min: parseInt(process.env.DB_POOL_MIN || "2", 10),
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000,
+  ssl: process.env.DATABASE_SSL === "false" ? false : undefined,
 });
 
 // Create Drizzle ORM instance
 export const db = drizzle(pool, { schema });
+
 
 // Test database connection
 export async function testDatabaseConnection(): Promise<boolean> {

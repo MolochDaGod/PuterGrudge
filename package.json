@@ -1,19 +1,26 @@
 {
   "name": "puter-monitor-ai",
-  "version": "3.1.0",
-  "description": "Puter Monitor AI — GrudgeOS WebOS (Vercel + Railway + Grudge ID + Puter user-pays)",
+  "version": "3.2.0",
+  "description": "Puter Monitor AI — GrudgeOS WebOS (Vercel shell + Railway user API + Grudge ID + Puter)",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "npx tsx script/build.ts",
+    "build:server": "npx tsx script/build-server.ts",
     "build:edge": "node scripts/build-production.mjs",
-    "build:all": "npm run build && npm run build:edge",
+    "build:all": "npm run build:server && npm run build:edge",
     "start": "node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "deploy:edge": "npm run build:edge && vercel deploy --prod --yes --scope grudgenexus"
+    "deploy:edge": "npm run build:edge && vercel deploy --prod --yes --scope grudgenexus",
+    "deploy:api": "railway up --detach"
   },
+
 
   "dependencies": {
     "@colyseus/schema": "^3.0.76",

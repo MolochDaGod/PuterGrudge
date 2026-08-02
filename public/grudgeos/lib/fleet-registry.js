@@ -8,7 +8,10 @@
   /** Production fleet hosts — match grudge-fleet skill. */
   const FLEET = {
     self: 'https://puter-monitor-ai.vercel.app',
+    /** This app's user/backend API (auth, agents, health, deploy tools) */
+    appApi: 'https://puter-monitor-api-production.up.railway.app',
     grudgeId: 'https://id.grudge-studio.com',
+    /** Fleet-wide characters / bag / wallet SSOT */
     railwayApi: 'https://grudge-api-production-0d46.up.railway.app',
     open: 'https://open.grudge-studio.com',
     forge: 'https://forge.grudge-studio.com',

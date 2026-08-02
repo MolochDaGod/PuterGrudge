@@ -1,0 +1,14 @@
+# Puter Monitor AI — Railway backend for GrudgeOS users
+# Frontend OS: Vercel puter-monitor-ai.vercel.app
+# API domain: puter-monitor-api-production.up.railway.app
+
+[build]
+builder = "NIXPACKS"
+# Nixpacks already runs npm install/ci — only build the server bundle
+buildCommand = "npm run build:server"
+
+[deploy]
+startCommand = "node dist/index.cjs"
+healthcheckPath = "/api/healthz"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

@@ -141,9 +141,9 @@ const manifest = {
   scope: '/',
   id: 'puter-monitor-ai',
   icons: [
-    { src: '/grudgeos/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-    { src: '/grudgeos/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-    { src: '/grudgeos/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: 'any', type: 'image/png', purpose: 'any' },
+    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: '192x192', type: 'image/png' },
+    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
   ],
   categories: ['games', 'developer tools', 'productivity'],
   shortcuts: [

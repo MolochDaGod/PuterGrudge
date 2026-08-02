@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <base href="/grudgeos/">
+  <meta name="grudgeos-version" content="3.0.0" />
+  <meta name="application-name" content="Puter Monitor AI" />
+  <link rel="manifest" href="/grudgeos/manifest.json" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GrudgeOS Desktop</title>
+  <title>Puter Monitor AI — GrudgeOS</title>
   <script>
     // Suppress ALL Puter SDK errors before loading
     window.addEventListener('error', e => {
@@ -130,6 +134,7 @@
     // Auto-init
     GrudgeID.init();
   </script>
+  <script src="lib/fleet-registry.js"></script>
   <script src="lib/icon-generator.js"></script>
   <script src="lib/agent-registry.js"></script>
   <script src="lib/network-containers.js"></script>
@@ -4403,7 +4408,7 @@
     <div id="desktop-viewport" data-testid="desktop-viewport">
       <div id="desktop" data-testid="desktop">
         <!-- Static fallback icon for debugging - will be replaced by JS -->
-        <div class="desktop-icon" data-app="debug-static" data-testid="icon-debug-static" style="left: 20px; top: 20px; display: none;">
+        <div class="desktop-icon" data-app="debug-static" data-testid="icon-debug-static" data-purged="true" style="display:none!important">
           <div class="desktop-icon-img"><img src="/grudgeos/assets/icons/generated/ai-studio.png" alt="debug" style="width:48px;height:48px;border-radius:6px;"></div>
           <div class="desktop-icon-label">Debug Icon</div>
         </div>
@@ -4851,14 +4856,64 @@
         height: 600,
         content: 'wasmrunner'
       },
-      zerotier: {
-        id: 'zerotier',
-        name: 'ZeroTier VPN',
-        iconPath: 'zerotier',
-        color: 'linear-gradient(135deg, #ffb900, #00f5ff)',
-        width: 850,
-        height: 650,
-        content: 'zerotier'
+      fleethub: {
+        id: 'fleethub',
+        name: 'Fleet Hub',
+        iconPath: 'cloud',
+        color: 'linear-gradient(135deg, #3b82f6, #00f5ff)',
+        width: 720,
+        height: 560,
+        content: 'fleethub'
+      },
+      warlords: {
+        id: 'warlords',
+        name: 'Warlords',
+        iconPath: 'games-launcher',
+        color: 'linear-gradient(135deg, #b8860b, #ff6b35)',
+        width: 400,
+        height: 200,
+        content: 'external',
+        url: 'https://grudgewarlords.com'
+      },
+      openlauncher: {
+        id: 'openlauncher',
+        name: 'Open',
+        iconPath: 'deploy',
+        color: 'linear-gradient(135deg, #00ff88, #3b82f6)',
+        width: 400,
+        height: 200,
+        content: 'external',
+        url: 'https://open.grudge-studio.com'
+      },
+      forge: {
+        id: 'forge',
+        name: 'Forge',
+        iconPath: 'creating',
+        color: 'linear-gradient(135deg, #8b5cf6, #ff00aa)',
+        width: 400,
+        height: 200,
+        content: 'external',
+        url: 'https://forge.grudge-studio.com'
+      },
+      grudgeid: {
+        id: 'grudgeid',
+        name: 'Grudge ID',
+        iconPath: 'settings',
+        color: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+        width: 400,
+        height: 200,
+        content: 'external',
+        url: 'https://id.grudge-studio.com'
+      },
+      aihub: {
+        id: 'aihub',
+        name: 'AI Hub',
+        iconPath: 'ai-brain',
+        color: 'linear-gradient(135deg, #00f5ff, #8b5cf6)',
+        width: 400,
+        height: 200,
+        content: 'external',
+        url: 'https://ai.grudge-studio.com'
       }
     };
     
@@ -5234,7 +5289,9 @@
     function renderDesktopIcons() {
       const desktop = document.getElementById('desktop');
       const viewport = document.getElementById('desktop-viewport');
-      const desktopApps = ['aivm', 'grudchat', 'agentsquad', 'pods', 'snapshots', 'studio3d', 'wasmrunner', 'grudgecloud', 'aistudio', 'agentswarm', 'observer', 'gameeditor', 'networktools'];
+      const desktopApps = (window.GrudgeFleetRegistry && window.GrudgeFleetRegistry.DESKTOP_ICONS)
+        ? window.GrudgeFleetRegistry.DESKTOP_ICONS.slice()
+        : ['aivm', 'grudchat', 'agentsquad', 'fleethub', 'pods', 'snapshots', 'studio3d', 'wasmrunner', 'grudgecloud', 'aistudio', 'observer', 'gameeditor', 'networktools', 'warlords', 'openlauncher', 'forge'];
       
       console.log('[GrudgeOS] renderDesktopIcons: desktop element:', desktop);
       console.log('[GrudgeOS] renderDesktopIcons: viewport element:', viewport);
@@ -5565,9 +5622,21 @@
     }
     
     function openApp(appId) {
+      if (window.GrudgeFleetRegistry) {
+        const reg = window.GrudgeFleetRegistry.APPS[appId];
+        if (reg && reg.aliasOf) appId = reg.aliasOf;
+        if (reg && reg.kind === 'external' && reg.url) {
+          window.GrudgeFleetRegistry.openFleetApp(appId);
+          return;
+        }
+      }
       const app = apps[appId];
       if (!app) return;
-      
+      if (app.url && (app.content === 'external' || app.kind === 'external')) {
+        window.open(app.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
       const existing = Object.values(windows).find(w => w.appId === appId && !w.minimized);
       if (existing) {
         focusWindow(existing.id);
@@ -5763,6 +5832,15 @@
     }
     
     function getAppContent(contentType) {
+      if (contentType === 'fleethub' && window.GrudgeFleetRegistry) {
+        const html = window.GrudgeFleetRegistry.fleetHubHtml();
+        setTimeout(() => {
+          document.querySelectorAll('[data-fleet-app]').forEach(btn => {
+            btn.addEventListener('click', () => openApp(btn.getAttribute('data-fleet-app')));
+          });
+        }, 50);
+        return html;
+      }
       switch(contentType) {
         case 'grudgecloud':
           return `<div id="grudgecloud-app" class="grudgecloud-wrapper" style="height: 100%;"></div>`;

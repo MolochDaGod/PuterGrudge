@@ -1,28 +1,39 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": "",
-  "outputDirectory": "public-vercel-edge",
-  "installCommand": "echo skip",
+  "buildCommand": "node scripts/build-production.mjs",
+  "outputDirectory": "dist/edge",
+  "installCommand": "echo skip-install",
   "headers": [
+    {
+      "source": "/grudgeos/lib/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=3600" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-Puter-Monitor-Edge", "value": "proxy-to-render" }
+        { "key": "X-GrudgeOS-Edge", "value": "v3-static+api-render" }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/",
-      "destination": "https://puter-monitor-ai.onrender.com/"
+      "source": "/api/:path*",
+      "destination": "https://puter-monitor-ai.onrender.com/api/:path*"
     },
     {
-      "source": "/:path*",
-      "destination": "https://puter-monitor-ai.onrender.com/:path*"
+      "source": "/arena",
+      "destination": "https://puter-monitor-ai.onrender.com/arena"
+    },
+    {
+      "source": "/arena/:path*",
+      "destination": "https://puter-monitor-ai.onrender.com/arena/:path*"
     }
   ]
 }

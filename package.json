@@ -1,15 +1,20 @@
 {
-  "name": "rest-express",
-  "version": "1.0.0",
+  "name": "puter-monitor-ai",
+  "version": "3.0.0",
+  "description": "Puter Monitor AI — GrudgeOS collaborative WebOS (fleet + Puter AI + Render API)",
   "type": "module",
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "npx tsx script/build.ts",
+    "build:edge": "node scripts/build-production.mjs",
+    "build:all": "npm run build && npm run build:edge",
     "start": "node dist/index.cjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "deploy:edge": "npm run build:edge && vercel deploy --prod --yes --scope grudgenexus"
   },
+
   "dependencies": {
     "@colyseus/schema": "^3.0.76",
     "@emotion/react": "^11.14.0",

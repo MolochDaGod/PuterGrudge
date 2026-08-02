@@ -1,30 +1,49 @@
 {
-  "name": "Grudge Studio",
-  "short_name": "Grudge",
-  "description": "Game Development Platform with AI, Storage, and Cloud Services",
-  "theme_color": "#1a5a5a",
-  "background_color": "#0a0a0a",
+  "name": "Puter Monitor AI — GrudgeOS",
+  "short_name": "GrudgeOS",
+  "description": "Grudge Studio collaborative WebOS: AI, fleet (Warlords/Open/Forge), cloud, agents.",
+  "theme_color": "#0a0a12",
+  "background_color": "#0a0a12",
   "display": "standalone",
   "orientation": "any",
   "start_url": "/",
   "scope": "/",
+  "id": "puter-monitor-ai",
   "icons": [
     {
-      "src": "/pwa-192x192.png",
+      "src": "/grudgeos/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/grudgeos/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/grudgeos/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["games", "entertainment", "developer tools"]
+  "categories": ["games", "developer tools", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Warlords",
+      "url": "https://grudgewarlords.com",
+      "description": "Play Grudge Warlords"
+    },
+    {
+      "name": "Forge",
+      "url": "https://forge.grudge-studio.com",
+      "description": "Scene / map editor"
+    },
+    {
+      "name": "Open",
+      "url": "https://open.grudge-studio.com",
+      "description": "Open launcher"
+    }
+  ]
 }
+

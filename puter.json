@@ -1,109 +1,33 @@
 {
   "name": "puter-monitor-ai",
-  "version": "2.0.0",
-  "description": "AI-powered monitoring dashboard with multi-worker architecture",
+  "version": "3.0.0",
+  "title": "Puter Monitor AI — GrudgeOS",
+  "description": "Grudge Studio collaborative WebOS: free Puter AI, fleet games (Warlords/Open/Forge), cloud tools, agent ops.",
   "type": "app",
-  "services": {
-    "web": {
-      "type": "web",
-      "runtime": "node20",
-      "entrypoint": "dist/index.cjs",
-      "build": "npm run build",
-      "env": {
-        "NODE_ENV": "production",
-        "PORT": "5000"
-      },
-      "resources": {
-        "memory": "512MB",
-        "cpu": "1"
-      }
-    },
-    "arena": {
-      "type": "worker",
-      "runtime": "node20",
-      "entrypoint": "server/arena/index.ts",
-      "env": {
-        "NODE_ENV": "production",
-        "WORKER_TYPE": "arena"
-      },
-      "resources": {
-        "memory": "256MB",
-        "cpu": "0.5"
-      }
-    },
-    "ai-agent": {
-      "type": "worker",
-      "runtime": "node20",
-      "entrypoint": "server/services/ai-service.ts",
-      "env": {
-        "NODE_ENV": "production",
-        "WORKER_TYPE": "ai_agent"
-      },
-      "resources": {
-        "memory": "512MB",
-        "cpu": "1"
-      }
-    }
-  },
-  "storage": {
-    "kv": {
-      "enabled": true,
-      "namespaces": ["auth", "sessions", "monitoring", "arena"]
-    },
-    "postgres": {
-      "enabled": true,
-      "shared": true
-    }
-  },
+  "index": "dist/edge/puter-app-dist/index.html",
+  "icon": "public/grudgeos/pwa-512x512.png",
+  "permissions": ["ai", "fs", "kv", "auth", "hosting"],
   "auth": {
     "provider": "puter",
-    "integration": "grudge-auth",
-    "endpoints": {
-      "login": "/api/auth/login",
-      "logout": "/api/auth/logout",
-      "verify": "/api/auth/me"
-    }
+    "integration": "grudge-id-optional"
   },
   "routes": {
-    "/": {
-      "service": "web"
-    },
-    "/api/v1/arena/*": {
-      "service": "arena",
-      "websocket": true
-    },
-    "/api/ai/*": {
-      "service": "ai-agent"
-    },
-    "/api/auth/*": {
-      "service": "web"
-    },
-    "/api/admin/*": {
-      "service": "web",
-      "auth": true
-    }
-  },
-  "networking": {
-    "internal": {
-      "enabled": true,
-      "services": ["web", "arena", "ai-agent"]
-    },
-    "websockets": {
-      "enabled": true,
-      "paths": ["/arena", "/api/v1/arena/*"]
-    }
-  },
-  "monitoring": {
-    "enabled": true,
-    "metrics": ["cpu", "memory", "requests", "websockets"],
-    "alerts": {
-      "memory_threshold": 90,
-      "cpu_threshold": 85
-    }
+    "/": { "static": "dist/edge" },
+    "/api/*": { "proxy": "https://puter-monitor-ai.onrender.com/api" }
   },
   "deployment": {
-    "strategy": "rolling",
-    "healthcheck": "/api/health",
-    "timeout": 300
+    "strategy": "static+proxy",
+    "healthcheck": "https://puter-monitor-ai.onrender.com/api/health",
+    "production": {
+      "vercel": "https://puter-monitor-ai.vercel.app",
+      "render": "https://puter-monitor-ai.onrender.com"
+    }
+  },
+  "fleet": {
+    "warlords": "https://grudgewarlords.com",
+    "open": "https://open.grudge-studio.com",
+    "forge": "https://forge.grudge-studio.com",
+    "id": "https://id.grudge-studio.com",
+    "ai": "https://ai.grudge-studio.com"
   }
 }

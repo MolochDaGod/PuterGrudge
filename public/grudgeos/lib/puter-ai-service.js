@@ -7,7 +7,9 @@ class PuterAIService {
   constructor() {
     this.initialized = false;
     this.models = {};
-    this.defaultModel = 'claude-sonnet-4';
+    // Production SSOT when present
+    const ssot = typeof window !== 'undefined' ? window.GrudgeProductionSSOT : null;
+    this.defaultModel = ssot?.defaultModel || ssot?.MODELS?.default || 'gpt-4o-mini';
     this.conversationHistory = new Map();
     this.tokenUsage = { total: 0, byModel: {} };
     this.callbacks = { onMessage: null, onError: null, onStream: null };
@@ -21,68 +23,49 @@ class PuterAIService {
       console.error('Puter.js SDK not loaded');
       return false;
     }
-    
-    // Populate available models
-    this.models = {
-      // Anthropic Claude
-      'claude-sonnet-4': { provider: 'anthropic', capabilities: ['chat', 'code', 'analysis', 'vision'], maxTokens: 8192 },
-      'claude-3-5-sonnet': { provider: 'anthropic', capabilities: ['chat', 'code', 'analysis'], maxTokens: 8192 },
-      'claude-3-haiku': { provider: 'anthropic', capabilities: ['chat', 'quick'], maxTokens: 4096 },
-      'claude-3-opus': { provider: 'anthropic', capabilities: ['chat', 'code', 'analysis', 'creative'], maxTokens: 4096 },
-      
-      // OpenAI
-      'gpt-4o': { provider: 'openai', capabilities: ['chat', 'vision', 'code', 'creative'], maxTokens: 4096 },
-      'gpt-4o-mini': { provider: 'openai', capabilities: ['chat', 'quick'], maxTokens: 4096 },
-      'gpt-4-turbo': { provider: 'openai', capabilities: ['chat', 'code', 'analysis'], maxTokens: 4096 },
-      'o1': { provider: 'openai', capabilities: ['reasoning', 'math', 'logic'], maxTokens: 32768 },
-      'o1-mini': { provider: 'openai', capabilities: ['reasoning', 'math'], maxTokens: 32768 },
-      
-      // Google
-      'gemini-2.0-flash': { provider: 'google', capabilities: ['chat', 'vision', 'long-context'], maxTokens: 8192 },
-      'gemini-1.5-pro': { provider: 'google', capabilities: ['chat', 'vision', 'analysis', 'ultra-long-context'], maxTokens: 8192 },
-      'gemini-1.5-flash': { provider: 'google', capabilities: ['chat', 'quick', 'vision'], maxTokens: 8192 },
-      
-      // Meta
-      'llama-3.1-405b': { provider: 'meta', capabilities: ['chat', 'code', 'analysis'], maxTokens: 4096 },
-      'llama-3.1-70b': { provider: 'meta', capabilities: ['chat', 'code'], maxTokens: 4096 },
-      'llama-3.1-8b': { provider: 'meta', capabilities: ['chat', 'quick'], maxTokens: 4096 },
-      
-      // Mistral
-      'mistral-large': { provider: 'mistral', capabilities: ['chat', 'code', 'multilingual'], maxTokens: 4096 },
-      'mistral-medium': { provider: 'mistral', capabilities: ['chat', 'code'], maxTokens: 4096 },
-      'mixtral-8x7b': { provider: 'mistral', capabilities: ['chat', 'code'], maxTokens: 4096 },
-      
-      // DeepSeek
-      'deepseek-chat': { provider: 'deepseek', capabilities: ['chat', 'code', 'chinese'], maxTokens: 4096 },
-      'deepseek-coder': { provider: 'deepseek', capabilities: ['code', 'analysis'], maxTokens: 4096 },
-      
-      // Other providers
-      'qwen-72b': { provider: 'alibaba', capabilities: ['chat', 'multilingual', 'math'], maxTokens: 4096 },
-      'yi-large': { provider: 'yi', capabilities: ['chat', 'analysis'], maxTokens: 4096 }
-    };
+
+    const ssot = typeof window !== 'undefined' ? window.GrudgeProductionSSOT : null;
+    if (ssot?.productionModelsMap) {
+      this.models = ssot.productionModelsMap();
+      this.defaultModel = ssot.defaultModel || this.defaultModel;
+    } else {
+      // Production base set (fallback if SSOT script not loaded)
+      this.models = {
+        'gpt-4o-mini': { provider: 'openai', capabilities: ['chat', 'quick'], maxTokens: 4096 },
+        'claude-sonnet-4': { provider: 'anthropic', capabilities: ['chat', 'code', 'analysis', 'vision'], maxTokens: 8192 },
+        'gpt-4o': { provider: 'openai', capabilities: ['chat', 'vision', 'code', 'creative'], maxTokens: 4096 },
+        'gemini-2.0-flash': { provider: 'google', capabilities: ['chat', 'vision', 'long-context'], maxTokens: 8192 },
+        'deepseek-coder': { provider: 'deepseek', capabilities: ['code', 'analysis'], maxTokens: 4096 },
+        'o1-mini': { provider: 'openai', capabilities: ['reasoning', 'math'], maxTokens: 16384 },
+        'mistral-large': { provider: 'mistral', capabilities: ['chat', 'code', 'multilingual'], maxTokens: 4096 },
+      };
+      this.defaultModel = 'gpt-4o-mini';
+    }
     
     this.initialized = true;
-    console.log(`PuterAIService initialized with ${Object.keys(this.models).length} models`);
+    console.log(`PuterAIService initialized default=${this.defaultModel} models=${Object.keys(this.models).length}`);
     return true;
   }
   
   // ============ MODEL SELECTION ============
   selectModel(task) {
+    const ssot = typeof window !== 'undefined' ? window.GrudgeProductionSSOT : null;
+    if (ssot?.resolveModel) return ssot.resolveModel(task);
     const taskModels = {
       'code': 'claude-sonnet-4',
       'code_review': 'claude-sonnet-4',
       'quick_chat': 'gpt-4o-mini',
-      'creative': 'claude-3-5-sonnet',
-      'analysis': 'gemini-1.5-pro',
+      'chat': 'gpt-4o-mini',
+      'creative': 'gpt-4o',
+      'analysis': 'gemini-2.0-flash',
       'vision': 'gpt-4o',
-      'reasoning': 'o1',
+      'reasoning': 'o1-mini',
       'math': 'o1-mini',
       'long_document': 'gemini-2.0-flash',
       'multilingual': 'mistral-large',
       'chinese': 'deepseek-chat',
-      'fast': 'claude-3-haiku'
+      'fast': 'gpt-4o-mini'
     };
-    
     return taskModels[task] || this.defaultModel;
   }
   
@@ -104,7 +87,10 @@ class PuterAIService {
   async chat(prompt, options = {}) {
     await this.init();
     
-    const model = options.model || this.defaultModel;
+    const ssot = typeof window !== 'undefined' ? window.GrudgeProductionSSOT : null;
+    const model = ssot?.resolveModel
+      ? ssot.resolveModel(options.model || options.task || this.defaultModel)
+      : (options.model || this.defaultModel);
     const conversationId = options.conversationId || 'default';
     
     // Build messages array

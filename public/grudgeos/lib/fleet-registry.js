@@ -220,10 +220,11 @@
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">${cards}</div>
         <div style="font-size:12px;opacity:0.65;line-height:1.7;">
           <div><strong>OS shell</strong> → Vercel (this app)</div>
+          <div><strong>App users API</strong> → ${FLEET.appApi || 'Railway puter-monitor-api'}</div>
           <div><strong>Auth</strong> → Grudge ID (${FLEET.grudgeId})</div>
-          <div><strong>Characters / account</strong> → Railway Postgres</div>
-          <div><strong>Server AI</strong> → ${FLEET.aiHub}</div>
-          <div><strong>User-pays AI / KV / FS</strong> → Puter.js</div>
+          <div><strong>Characters / account</strong> → Railway grudge-api</div>
+          <div><strong>User-pays AI</strong> → Puter (default gpt-4o-mini · code claude-sonnet-4)</div>
+          <div><strong>Fleet AI hub</strong> → ${FLEET.aiHub}</div>
           <div><strong>Assets</strong> → ${FLEET.assets}</div>
         </div>
       </div>`;

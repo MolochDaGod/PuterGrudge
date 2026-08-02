@@ -41,14 +41,16 @@ declare global {
 
 export class PuterAIFallback {
   initialized = false;
-  defaultModel = 'claude-sonnet-4';
+  // Production defaults: chat=gpt-4o-mini, code=claude-sonnet-4 (see production-ssot.js)
+  defaultModel = 'gpt-4o-mini';
   private history = new Map<string, Array<{ role: string; content: string }>>();
   private models: Record<string, { provider: string; maxTokens: number }> = {
-    'claude-sonnet-4': { provider: 'anthropic', maxTokens: 8192 },
-    'claude-3-5-sonnet': { provider: 'anthropic', maxTokens: 8192 },
-    'gpt-4o': { provider: 'openai', maxTokens: 4096 },
     'gpt-4o-mini': { provider: 'openai', maxTokens: 4096 },
+    'claude-sonnet-4': { provider: 'anthropic', maxTokens: 8192 },
+    'gpt-4o': { provider: 'openai', maxTokens: 4096 },
     'gemini-2.0-flash': { provider: 'google', maxTokens: 8192 },
+    'deepseek-coder': { provider: 'deepseek', maxTokens: 4096 },
+    'o1-mini': { provider: 'openai', maxTokens: 16384 },
   };
 
   async init(): Promise<boolean> {

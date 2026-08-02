@@ -65,7 +65,13 @@ desktop = desktop
   .replace(/let indicator = document\.getElementById\('icon-count-indicator'\)[\s\S]*?indicator\.textContent = 'Icons: ' \+ iconCount;\s*/g, '')
   .replace(/if \(ind\) ind\.textContent = 'Icons: ' \+ currentCount \+ ' \(verified\)';\s*/g, '');
 
-// Inject fleet registry before first lib script if missing
+// Inject production SSOT + fleet registry before first lib script if missing
+if (!desktop.includes('production-ssot.js')) {
+  desktop = desktop.replace(
+    '<script src="lib/icon-generator.js"></script>',
+    `<script src="lib/production-ssot.js"></script>\n  <script src="lib/icon-generator.js"></script>`,
+  );
+}
 if (!desktop.includes('fleet-registry.js')) {
   desktop = desktop.replace(
     '<script src="lib/icon-generator.js"></script>',
@@ -190,7 +196,7 @@ writeFileSync(join(puterAppDir, 'index.html'), puterShell);
 const health = {
   status: 'healthy',
   service: 'puter-monitor-ai',
-  version: '3.2.0',
+  version: '3.3.0',
   os: 'GrudgeOS',
   mode: 'vercel-shell+railway-api',
   builtAt: new Date().toISOString(),
@@ -203,6 +209,21 @@ const health = {
     puter: 'user-pays (js.puter.com)',
     assets: 'https://assets.grudge-studio.com',
     objectStore: 'https://objectstore.grudge-studio.com',
+  },
+  models: {
+    default: 'gpt-4o-mini',
+    code: 'claude-sonnet-4',
+    creative: 'gpt-4o',
+    analysis: 'gemini-2.0-flash',
+    vision: 'gpt-4o',
+    reasoning: 'o1-mini',
+    agents: {
+      orchestrator: 'gpt-4o-mini',
+      code: 'claude-sonnet-4',
+      creator: 'gpt-4o',
+      editor: 'gpt-4o-mini',
+    },
+    path: 'puter-user-pays',
   },
   services: {
     puterAI: true,

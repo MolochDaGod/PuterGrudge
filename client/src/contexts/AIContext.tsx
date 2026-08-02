@@ -59,7 +59,7 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AIState>({
     initialized: false,
     available: false,
-    currentModel: 'claude-sonnet-4',
+    currentModel: 'gpt-4o-mini',
     conversationId: 'default',
     messages: [],
     isThinking: false,

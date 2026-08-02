@@ -6,6 +6,7 @@
   <title>Treaty Chat — GrudgeOS</title>
   <link rel="icon" type="image/png" href="/grudgeos/assets/icons/cloudpilot-logo.png" />
   <script src="https://js.puter.com/v2/"></script>
+  <script src="/grudgeos/lib/production-ssot.js"></script>
   <script src="/grudgeos/lib/puter-ai-service.js" defer></script>
   <style>
     :root {
@@ -174,21 +175,33 @@
       ]},
     ];
 
+    const SSOT = window.GrudgeProductionSSOT;
+    const AGENT_MODELS = SSOT?.USAGE?.treaty?.agents || {
+      orchestrator: 'gpt-4o-mini',
+      code: 'claude-sonnet-4',
+      creator: 'gpt-4o',
+      editor: 'gpt-4o-mini',
+    };
+
     const AGENTS = {
       orchestrator: {
         id: 'orchestrator', name: 'Orchestrator', color: '#8b5cf6',
-        system: 'You are Orchestrator on GrudgeOS Treaty Chat. Route tasks, propose /open /create /edit OS commands, keep answers short and actionable.',
+        model: AGENT_MODELS.orchestrator || 'gpt-4o-mini',
+        system: 'You are Orchestrator on GrudgeOS Treaty Chat. Route tasks, propose /open /create /edit OS commands, keep answers short and actionable. Production stack: Vercel OS + Railway app API + Puter user-pays AI.',
       },
       code: {
         id: 'code', name: 'Code', color: '#00ff88',
+        model: AGENT_MODELS.code || 'claude-sonnet-4',
         system: 'You are Code agent on GrudgeOS. Help write/edit code, suggest fixes, return snippets in markdown. Prefer small patches. Suggest /open aivm or /open terminal when useful.',
       },
       creator: {
         id: 'creator', name: 'Creator', color: '#00f5ff',
+        model: AGENT_MODELS.creator || 'gpt-4o',
         system: 'You are Creator agent. Help invent UI, content, and assets for Grudge Studio. Suggest /open studio3d or /open aistudio when relevant.',
       },
       editor: {
         id: 'editor', name: 'Editor', color: '#ff00aa',
+        model: AGENT_MODELS.editor || 'gpt-4o-mini',
         system: 'You are Editor agent. Help rename, restructure, and polish OS content. Use /edit style suggestions.',
       },
     };
@@ -421,10 +434,15 @@ If you want an OS action executed, end with a line: OS_ACTION:openApp:appId
 or OS_ACTION:create:note:Title
 Keep replies concise.`;
 
-      // Prefer window.puterAI then puter.ai
+      const model = agent.model
+        || (window.GrudgeProductionSSOT?.resolveModel?.('agent_' + agentId))
+        || (window.GrudgeProductionSSOT?.defaultModel)
+        || 'gpt-4o-mini';
+
+      // Prefer window.puterAI then puter.ai (production: user-pays Puter)
       if (window.puterAI?.chat) {
         const r = await window.puterAI.chat(userText, {
-          model: 'claude-sonnet-4',
+          model,
           system,
           conversationId: `treaty-${agentId}`,
           temperature: 0.5,
@@ -436,7 +454,7 @@ Keep replies concise.`;
         const r = await puter.ai.chat([
           { role: 'system', content: system },
           { role: 'user', content: userText },
-        ], { model: 'gpt-4o-mini' });
+        ], { model });
         const content = typeof r === 'string' ? r : (r?.message?.content || r?.content || String(r));
         return content;
       }

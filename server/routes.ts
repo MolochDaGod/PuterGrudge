@@ -1207,35 +1207,17 @@ deployGame();`
     res.json({ success: true, account });
   });
 
-  // ============ TERMINAL COMMAND API (Sandboxed) ============
-  app.post('/api/terminal/exec', async (req, res) => {
-    const { command, type = 'bash' } = req.body;
-    
-    if (!command) {
-      return res.status(400).json({ error: 'Command required' });
-    }
-
-    // Only allow safe, sandboxed commands
-    const safeCommands = ['echo', 'date', 'whoami', 'pwd', 'node', 'python3'];
-    const baseCmd = command.split(' ')[0];
-    
-    if (!safeCommands.includes(baseCmd)) {
-      return res.json({ 
-        output: `Command '${baseCmd}' is not available in sandboxed mode.`,
-        error: true 
-      });
-    }
-
-    try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      const { stdout, stderr } = await execAsync(command, { timeout: 5000 });
-      res.json({ output: stdout || stderr, error: !!stderr });
-    } catch (error: any) {
-      res.json({ output: error.message, error: true });
-    }
+  // ============ TERMINAL COMMAND API (removed) ============
+  // POST /api/terminal/exec used to pass a request string to child_process.exec
+  // with no auth (only the first word was checked), which allowed remote command
+  // execution. The OS terminal is now Grudge Shell (public/grudgeos/lib/gsh.js),
+  // which runs entirely in the browser, so the server route is gone. Answer 410
+  // so stale clients get a clear error instead of falling through to the SPA.
+  app.all('/api/terminal/exec', (_req, res) => {
+    res.status(410).json({
+      error: 'gone',
+      message: 'Server terminal execution was removed. Use Grudge Shell in GrudgeOS (runs in your browser).',
+    });
   });
 
   // ============ GRUDGEOS AI API ============

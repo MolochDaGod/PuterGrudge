@@ -226,9 +226,8 @@ GET /api/discord/auth-url
 --- TERMINAL API ---
 
 POST /api/terminal/exec
-  Description: Execute sandboxed terminal command
-  Body: { command: string, cwd?: string }
-  Response: { stdout, stderr, exitCode }
+  Removed: always answers 410 Gone. The GrudgeOS terminal is Grudge Shell
+  (public/grudgeos/lib/gsh.js) and runs entirely in the browser.
 
 --- GRUDACHAIN ACCOUNTS API ---
 

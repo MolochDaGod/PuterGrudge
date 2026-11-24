@@ -16,6 +16,7 @@
     "build:all": "npm run build:server && npm run build:edge",
     "start": "node dist/index.cjs",
     "check": "tsc",
+    "test": "node --test tests/*.test.mjs",
     "db:push": "drizzle-kit push",
     "deploy:edge": "npm run build:edge && vercel deploy --prod --yes --scope grudgenexus",
     "deploy:api": "railway up --detach"

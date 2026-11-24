@@ -1,319 +1,117 @@
 /**
- * GrudgeOS Service Worker - Caching and Background Sync
- * Provides offline support, asset caching, and background request handling
+ * GrudgeOS service worker (P1).
+ *
+ * - Navigations: network first, then the cached shell, then a small offline page.
+ * - Same-origin static files (/grudgeos/lib, styles, fonts, sounds): stale-while-revalidate.
+ * - Brand icons from assets.grudge-studio.com/branding/: cache first.
+ * - Never caches /api, /auth, /login, non-GET requests, or other origins (Puter, AI, GrudgeID).
+ *
+ * Bump VERSION to roll every client to a new cache.
  */
+const VERSION = 'grudgeos-v3-p1';
+const SHELL_CACHE = `${VERSION}-shell`;
+const STATIC_CACHE = `${VERSION}-static`;
+const CDN_CACHE = `${VERSION}-cdn`;
 
-const CACHE_NAME = 'grudgeos-v2';
-const STATIC_CACHE = 'grudgeos-static-v2';
-const API_CACHE = 'grudgeos-api-v2';
-
-const STATIC_ASSETS = [
+const SHELL = [
+  '/',
   '/grudgeos/desktop.html',
-  '/grudgeos/agent-swarm.html',
-  '/grudgeos/styles/common.css',
-  '/grudgeos/lib/window-manager.js',
-  '/grudgeos/lib/event-bus.js',
-  '/grudgeos/lib/icon-generator.js',
-  '/grudgeos/lib/agent-registry.js',
-  '/grudgeos/assets/agents/cloudpilot.png',
-  '/grudgeos/assets/agents/cloudpilot-alt.png',
-  '/grudgeos/assets/favicon.png',
-  '/favicon.png'
+  '/grudgeos/manifest.json',
+  '/grudgeos/lib/gsh.js',
+  '/grudgeos/lib/pwa-register.js',
 ];
 
-const API_ROUTES = [
-  '/api/v1/execute',
-  '/api/v1/pods',
-  '/api/v1/executions',
-  '/api/agents',
-  '/api/extensions'
-];
+const NEVER = [/^\/api\//, /^\/auth\//, /^\/login/];
+const STATIC = [/^\/grudgeos\/(lib|styles|fonts|sounds)\//, /^\/grudgeos\/.*\.(css|js|woff2?|json)$/];
+const CDN_HOST = 'assets.grudge-studio.com';
+const CDN_PATH = /^\/branding\//;
+const MAX_STATIC_ENTRIES = 200;
+
+const OFFLINE_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>GrudgeOS offline</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0a0a12;color:#e8e8ff;font:15px system-ui,sans-serif}
+main{max-width:420px;padding:24px;text-align:center}button{margin-top:16px;padding:10px 18px;border:1px solid #00f5ff;background:transparent;color:#00f5ff;border-radius:8px;font:inherit}</style>
+</head><body><main><h1>You're offline</h1><p>GrudgeOS needs a connection the first time it loads. Once it has, the desktop and your Grudge Shell files work offline.</p>
+<button onclick="location.reload()">Try again</button></main></body></html>`;
 
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing GrudgeOS Service Worker v2');
-  
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS.filter(url => {
-        return !url.includes('undefined');
-      })).catch(err => {
-        console.warn('[SW] Some assets failed to cache:', err);
-      });
-    })
+    caches.open(SHELL_CACHE).then((cache) =>
+      Promise.all(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' })).catch(() => null))),
+    ),
   );
-  
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating GrudgeOS Service Worker v2');
-  
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter(name => name.startsWith('grudgeos-') && !name.endsWith('-v2'))
-          .map(name => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((k) => k.startsWith('grudgeos-') && !k.startsWith(VERSION)).map((k) => caches.delete(k)),
+    );
+    await self.clients.claim();
+  })());
 });
-
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
-  if (!url.protocol.startsWith('http')) {
-    return;
-  }
-  
-  if (event.request.method !== 'GET') {
-    if (url.pathname.startsWith('/api/')) {
-      event.respondWith(handleApiMutation(event.request));
-    }
-    return;
-  }
-  
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(event.request));
-    return;
-  }
-  
-  if (isStaticAsset(url.pathname)) {
-    event.respondWith(handleStaticAsset(event.request));
-    return;
-  }
-  
-  event.respondWith(handleDynamicRequest(event.request));
-});
-
-function isStaticAsset(pathname) {
-  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.ico'];
-  return staticExtensions.some(ext => pathname.endsWith(ext)) || 
-         pathname.includes('/assets/') ||
-         pathname.includes('/lib/');
-}
-
-async function handleStaticAsset(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    fetch(request).then(response => {
-      if (response.ok) {
-        cache.put(request, response.clone());
-      }
-    }).catch(() => {});
-    
-    return cachedResponse;
-  }
-  
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (error) {
-    console.warn('[SW] Failed to fetch static asset:', request.url);
-    return new Response('Asset not available offline', { status: 503 });
-  }
-}
-
-async function handleApiRequest(request) {
-  try {
-    const response = await fetch(request);
-    
-    if (response.ok && request.method === 'GET') {
-      const cache = await caches.open(API_CACHE);
-      cache.put(request, response.clone());
-    }
-    
-    return response;
-  } catch (error) {
-    const cache = await caches.open(API_CACHE);
-    const cachedResponse = await cache.match(request);
-    
-    if (cachedResponse) {
-      console.log('[SW] Returning cached API response:', request.url);
-      return cachedResponse;
-    }
-    
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Network unavailable',
-      offline: true
-    }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-async function handleApiMutation(request) {
-  try {
-    return await fetch(request);
-  } catch (error) {
-    await queueBackgroundSync(request);
-    
-    return new Response(JSON.stringify({
-      success: true,
-      queued: true,
-      message: 'Request queued for background sync'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-async function handleDynamicRequest(request) {
-  const cache = await caches.open(CACHE_NAME);
-  
-  try {
-    const response = await fetch(request);
-    
-    if (response.ok && request.url.includes('/grudgeos/')) {
-      cache.put(request, response.clone());
-    }
-    
-    return response;
-  } catch (error) {
-    const cachedResponse = await cache.match(request);
-    
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    if (request.destination === 'document') {
-      const fallback = await cache.match('/grudgeos/desktop.html');
-      if (fallback) return fallback;
-    }
-    
-    return new Response('Content not available offline', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain' }
-    });
-  }
-}
-
-async function queueBackgroundSync(request) {
-  try {
-    const body = await request.clone().text();
-    const syncItem = {
-      id: `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      url: request.url,
-      method: request.method,
-      headers: Object.fromEntries(request.headers.entries()),
-      body: body,
-      timestamp: Date.now()
-    };
-    
-    const db = await openSyncDB();
-    const tx = db.transaction('queue', 'readwrite');
-    tx.objectStore('queue').add(syncItem);
-    
-    if ('sync' in self.registration) {
-      await self.registration.sync.register('grudgeos-sync');
-    }
-  } catch (e) {
-    console.warn('[SW] Failed to queue sync:', e);
-  }
-}
-
-function openSyncDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('grudgeos-sync', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('queue')) {
-        db.createObjectStore('queue', { keyPath: 'id' });
-      }
-    };
-  });
-}
-
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'grudgeos-sync') {
-    event.waitUntil(processSyncQueue());
-  }
-});
-
-async function processSyncQueue() {
-  try {
-    const db = await openSyncDB();
-    const tx = db.transaction('queue', 'readwrite');
-    const store = tx.objectStore('queue');
-    const items = await new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    
-    for (const item of items) {
-      try {
-        const response = await fetch(item.url, {
-          method: item.method,
-          headers: item.headers,
-          body: item.body
-        });
-        
-        if (response.ok) {
-          store.delete(item.id);
-          notifyClients({
-            type: 'sync-complete',
-            id: item.id,
-            success: true
-          });
-        }
-      } catch (e) {
-        console.warn('[SW] Sync failed for item:', item.id);
-      }
-    }
-  } catch (e) {
-    console.error('[SW] Sync queue processing failed:', e);
-  }
-}
-
-async function notifyClients(message) {
-  const clients = await self.clients.matchAll({ type: 'window' });
-  clients.forEach(client => {
-    client.postMessage(message);
-  });
-}
 
 self.addEventListener('message', (event) => {
-  const { type, payload } = event.data || {};
-  
-  switch (type) {
-    case 'SKIP_WAITING':
-      self.skipWaiting();
-      break;
-      
-    case 'CLEAR_CACHE':
-      caches.keys().then(names => {
-        names.forEach(name => {
-          if (name.startsWith('grudgeos-')) {
-            caches.delete(name);
-          }
-        });
-      });
-      break;
-      
-    case 'CACHE_ASSETS':
-      if (payload && Array.isArray(payload)) {
-        caches.open(STATIC_CACHE).then(cache => {
-          cache.addAll(payload);
-        });
-      }
-      break;
-  }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-console.log('[SW] GrudgeOS Service Worker v2 loaded');
+async function trim(cacheName, max) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
+
+async function networkFirstNavigation(request) {
+  try {
+    const res = await fetch(request);
+    if (res.ok) {
+      const cache = await caches.open(SHELL_CACHE);
+      cache.put('/', res.clone());
+    }
+    return res;
+  } catch (_) {
+    const cached = (await caches.match(request)) || (await caches.match('/')) || (await caches.match('/grudgeos/desktop.html'));
+    return cached || new Response(OFFLINE_HTML, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+}
+
+async function staleWhileRevalidate(event, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(event.request);
+  const network = fetch(event.request).then((res) => {
+    if (res.ok && (res.type === 'basic' || res.type === 'cors')) {
+      cache.put(event.request, res.clone());
+      trim(cacheName, MAX_STATIC_ENTRIES);
+    }
+    return res;
+  }).catch(() => cached);
+  if (cached) { event.waitUntil(network); return cached; }
+  return network;
+}
+
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const res = await fetch(request);
+  if (res.ok) cache.put(request, res.clone());
+  return res;
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
+  if (url.origin === self.location.origin) {
+    if (NEVER.some((re) => re.test(url.pathname))) return;
+    if (request.mode === 'navigate') { event.respondWith(networkFirstNavigation(request)); return; }
+    if (STATIC.some((re) => re.test(url.pathname))) { event.respondWith(staleWhileRevalidate(event, STATIC_CACHE)); return; }
+    return;
+  }
+
+  if (url.hostname === CDN_HOST && CDN_PATH.test(url.pathname)) {
+    event.respondWith(cacheFirst(request, CDN_CACHE));
+  }
+});

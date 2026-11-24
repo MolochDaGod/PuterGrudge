@@ -130,34 +130,36 @@ desktop = desktop.replace(
   'data-app="debug-static" data-purged="true"',
 );
 
+// P1: PWA head tags for iOS/Android install (CDN brand icon, no local stand-ins)
+const PWA_HEAD = [
+  '<link rel="apple-touch-icon" href="https://assets.grudge-studio.com/branding/favicons/grudge-icon-180x180.png" />',
+  '<meta name="theme-color" content="#0a0a12" />',
+  '<meta name="mobile-web-app-capable" content="yes" />',
+  '<meta name="apple-mobile-web-app-capable" content="yes" />',
+  '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
+  '<meta name="apple-mobile-web-app-title" content="GrudgeOS" />',
+].join('\n  ');
+desktop = desktop.replace(/<link rel="apple-touch-icon"[^>]*>/i, '');
+if (!desktop.includes('apple-mobile-web-app-capable')) {
+  desktop = desktop.replace(/<\/head>/i, `  ${PWA_HEAD}\n</head>`);
+}
+
+// P1: Grudge Shell terminal + service worker / install prompt (loaded last so
+// gsh replaces the simulated terminal's window.initTerminal)
+if (!desktop.includes('lib/gsh.js')) {
+  const tail = '  <script src="lib/gsh.js"></script>\n  <script src="lib/pwa-register.js"></script>\n</body>';
+  const idx = desktop.lastIndexOf('</body>');
+  if (idx === -1) throw new Error('[build-production] desktop.html has no </body>');
+  desktop = desktop.slice(0, idx) + tail + desktop.slice(idx + '</body>'.length);
+}
+
 writeFileSync(join(out, 'grudgeos', 'desktop.html'), desktop);
 // Root entry
 writeFileSync(join(out, 'index.html'), desktop);
 
-// Root PWA / app meta
-const manifest = {
-  name: 'Puter Monitor AI — GrudgeOS',
-  short_name: 'GrudgeOS',
-  description: 'Grudge Studio collaborative WebOS: AI, fleet games, cloud deploy, Puter user-pays.',
-  theme_color: '#0a0a12',
-  background_color: '#0a0a12',
-  display: 'standalone',
-  orientation: 'any',
-  start_url: '/',
-  scope: '/',
-  id: 'puter-monitor-ai',
-  icons: [
-    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: 'any', type: 'image/png', purpose: 'any' },
-    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: '192x192', type: 'image/png' },
-    { src: '/grudgeos/assets/icons/cloudpilot-logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-  ],
-  categories: ['games', 'developer tools', 'productivity'],
-  shortcuts: [
-    { name: 'Warlords', url: 'https://grudgewarlords.com', description: 'Play Warlords' },
-    { name: 'Forge', url: 'https://forge.grudge-studio.com', description: 'Map / scene editor' },
-    { name: 'Open', url: 'https://open.grudge-studio.com', description: 'Open launcher' },
-  ],
-};
+// Root PWA / app meta — single source: public/grudgeos/manifest.json
+// (icons come from assets.grudge-studio.com/branding/favicons, real 192–512 px)
+const manifest = JSON.parse(readFileSync(join(root, 'public', 'grudgeos', 'manifest.json'), 'utf8'));
 writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2));
 writeFileSync(join(out, 'grudgeos', 'manifest.json'), JSON.stringify(manifest, null, 2));
 

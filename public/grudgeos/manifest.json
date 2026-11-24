@@ -1,50 +1,26 @@
 {
   "name": "Puter Monitor AI — GrudgeOS",
   "short_name": "GrudgeOS",
-  "description": "Grudge Studio collaborative WebOS: AI, fleet (Warlords/Open/Forge), cloud, agents.",
+  "description": "Grudge Studio web OS: desktop, Grudge Shell terminal, Treaty chat, agents and fleet games.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
   "theme_color": "#0a0a12",
   "background_color": "#0a0a12",
-  "display": "standalone",
-  "orientation": "any",
-  "start_url": "/",
-  "scope": "/",
-  "id": "puter-monitor-ai",
-  "icons": [
-    {
-      "src": "/grudgeos/assets/icons/cloudpilot-logo.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/grudgeos/assets/icons/cloudpilot-logo.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/grudgeos/assets/icons/cloudpilot-logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
+  "lang": "en",
   "categories": ["games", "developer tools", "productivity"],
+  "icons": [
+    { "src": "https://assets.grudge-studio.com/branding/favicons/grudge-icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://assets.grudge-studio.com/branding/favicons/grudge-icon-256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "https://assets.grudge-studio.com/branding/favicons/grudge-icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "https://assets.grudge-studio.com/branding/favicons/grudge-icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
   "shortcuts": [
-    {
-      "name": "Warlords",
-      "url": "https://grudgewarlords.com",
-      "description": "Play Grudge Warlords"
-    },
-    {
-      "name": "Forge",
-      "url": "https://forge.grudge-studio.com",
-      "description": "Scene / map editor"
-    },
-    {
-      "name": "Open",
-      "url": "https://open.grudge-studio.com",
-      "description": "Open launcher"
-    }
+    { "name": "Terminal", "short_name": "Shell", "url": "/?open=terminal", "description": "Open Grudge Shell" },
+    { "name": "Treaty Chat", "short_name": "Treaty", "url": "/?open=grudchat", "description": "Open Treaty chat" },
+    { "name": "Fleet Hub", "short_name": "Fleet", "url": "/?open=fleethub", "description": "Warlords, Forge and Open" }
   ]
 }
-
